@@ -9,5 +9,6 @@ This is a new development to build a Bible Reader Application for Desktop System
 Contributions
   Contributions are welcome from anyone
   Please be respectful and curtious
+  If you want to take on any issues leave a comment in the issue
 
 ** This will be updated as the project progresses
