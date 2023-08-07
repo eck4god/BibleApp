@@ -3,6 +3,7 @@ package main.java.Views;
 import main.java.Data.BibleLink;
 import main.java.Service.DatabaseConnection;
 import javax.swing.*;
+import javax.swing.border.EmptyBorder;
 import javax.swing.text.html.HTMLDocument;
 import javax.swing.text.html.HTMLEditorKit;
 import java.awt.*;
@@ -20,9 +21,9 @@ public class ReaderPanel extends JPanel {
     public ReaderPanel(Long bibleId, Long bookId, Long chapterId) {
         BorderLayout layout = new BorderLayout();
         this.setLayout(layout);
+        this.setBorder(new EmptyBorder(10,10,10,10));
         NavigationDropDown navigationDropDown = new NavigationDropDown(this);
         this.add(navigationDropDown, BorderLayout.NORTH);
-        this.setSize(800, 600);
 
         getBibleLinks(bibleId, bookId, chapterId);
 
