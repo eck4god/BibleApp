@@ -12,6 +12,7 @@ import java.io.File;
 public class Application extends JFrame {
 
     File selectedFile;
+    ReaderPanel readerPanel;
     public Application() {}
     public boolean setUpFrame() {
         BorderLayout layout = new BorderLayout();
@@ -24,8 +25,11 @@ public class Application extends JFrame {
         this.setLayout(layout);
         menuBar();
         toolbar();
-        ReaderPanel readerPanel = new ReaderPanel((long)1, (long)1, (long)1);
-        this.getContentPane().add(readerPanel, BorderLayout.CENTER);
+        NavigationPane navigationPane = new NavigationPane(this);
+        navigationPane.setVisible(true);
+        readerPanel = new ReaderPanel((long)1, (long)1, (long)1);
+        JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, navigationPane, readerPanel);
+        this.getContentPane().add(splitPane);
         this.pack();
         this.addWindowListener(new WindowAdapter() {
             @Override
@@ -135,5 +139,9 @@ public class Application extends JFrame {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    public void navigateTo(Long book, Long chapter) {
+        readerPanel.setSearchFields(1L, book, chapter);
     }
 }
