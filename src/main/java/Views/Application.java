@@ -13,6 +13,7 @@ public class Application extends JFrame {
 
     File selectedFile;
     ReaderPanel readerPanel;
+    JSplitPane splitPane;
     public Application() {}
     public boolean setUpFrame() {
         BorderLayout layout = new BorderLayout();
@@ -28,7 +29,7 @@ public class Application extends JFrame {
         NavigationPane navigationPane = new NavigationPane(this);
         navigationPane.setVisible(true);
         readerPanel = new ReaderPanel((long)1, (long)1, (long)1);
-        JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, navigationPane, readerPanel);
+        splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, navigationPane, readerPanel);
         this.getContentPane().add(splitPane);
         this.pack();
         this.addWindowListener(new WindowAdapter() {
@@ -53,8 +54,44 @@ public class Application extends JFrame {
     }
     private void menuBar() {
         JMenuBar menu = new JMenuBar();
+
+        // File Menu
         JMenu file = new JMenu("File");
+        JMenuItem importBible = new JMenuItem("Import Bible...");
+        importBible.addActionListener(e -> {
+            importDialog();
+        });
+        file.add(importBible);
+
+
+        if (!System.getProperty("os.name").equals("Mac OS X")) {
+            file.add(new JSeparator());
+            JMenuItem quit = new JMenuItem("Quit");
+            quit.addActionListener(e -> {
+                this.setVisible(false);
+                this.dispose();
+                System.exit(0);
+            });
+            file.add(quit);
+        }
+
         menu.add(file);
+
+        // View Menu
+        JMenu view = new JMenu("View");
+        JMenuItem navView = new JMenuItem("Show/Hide Nav Pane");
+        navView.addActionListener(e -> {
+            if (splitPane.getLeftComponent().isVisible()) {
+                splitPane.getLeftComponent().setVisible(false);
+            } else {
+                splitPane.getLeftComponent().setVisible(true);
+                splitPane.setDividerLocation(200);
+            }
+        });
+        view.add(navView);
+
+        menu.add(view);
+
         this.setJMenuBar(menu);
         this.add(menu);
 
@@ -62,10 +99,31 @@ public class Application extends JFrame {
 
     private void toolbar() {
         JToolBar toolBar = new JToolBar();
-        JButton importBook = new JButton("Import");
+
+        // Show/Hide Navigation Pane
+        JButton showNavPane = new JButton();
+        showNavPane.setIcon(new ImageIcon("./Resources/icons8-show-sidepanel-100.png"));
+        showNavPane.setPreferredSize(new Dimension(50, 50));
+        showNavPane.addActionListener(e -> {
+            if (splitPane.getLeftComponent().isVisible()) {
+                splitPane.getLeftComponent().setVisible(false);
+            } else {
+                splitPane.getLeftComponent().setVisible(true);
+                splitPane.setDividerLocation(200);
+            }
+        });
+        showNavPane.setToolTipText("Show/Hide Navigation Pane");
+        toolBar.add(showNavPane);
+
+        // Import Button
+        JButton importBook = new JButton();
+        importBook.setIcon(new ImageIcon("./Resources/icons8-import-50.png"));
+        importBook.setPreferredSize(new Dimension(50, 50));
+        importBook.setToolTipText("Import a new Bible");
         importBook.addActionListener(event -> {
             importDialog();
         });
+
         toolBar.add(importBook);
         toolBar.setRollover(true);
         toolBar.setFloatable(false);

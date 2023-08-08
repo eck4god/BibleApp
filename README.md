@@ -6,9 +6,11 @@ This is a new development to build a Bible Reader Application for Desktop System
   3. Want to be able to highlight text and save highlights to be recalled
   4. Want to be able to have reference materials imported into the application
 
-Contributions
-  Contributions are welcome from anyone
-  Please be respectful and curtious
-  If you want to take on any issues leave a comment in the issue
+Contributions   
+  1. Contributions are welcome from anyone
+  2. Please be respectful and curious
+  3. If you want to take on any issues leave a comment in the issue
+  4. Project was created in Intellij, and is built using Ant.
+  5. SQLite is required for successful build
 
 ** This will be updated as the project progresses
