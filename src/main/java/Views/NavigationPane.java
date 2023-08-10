@@ -56,6 +56,7 @@ public class NavigationPane extends JPanel {
                         DefaultMutableTreeNode node = (DefaultMutableTreeNode) value;
                         Object userObject = node.getUserObject();
 
+
                         if (userObject instanceof Book) {
                             Book book = (Book) userObject;
                             this.setText(book.getBookTitle());
