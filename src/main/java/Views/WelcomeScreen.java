@@ -8,7 +8,6 @@ import java.awt.*;
 public class WelcomeScreen extends JFrame {
 
     ProgramDirectoryService programDirectoryService = new ProgramDirectoryService();
-
     public WelcomeScreen() {
         this.setUndecorated(true);
         this.setSize(new Dimension(648, 348));
@@ -20,7 +19,10 @@ public class WelcomeScreen extends JFrame {
     }
 
     private void createBackground() {
-        String path =  programDirectoryService.getProgramDirectory();
+
+
+        String path = programDirectoryService.getProgramDirectory();
+
         ImageIcon img = new ImageIcon(path+"/Resources/bible.jpg");
 
         JPanel panel = new JPanel() {
