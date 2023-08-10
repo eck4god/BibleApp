@@ -3,14 +3,11 @@ package main.java.Views;
 import main.java.Data.Book;
 import main.java.Data.Chapter;
 import main.java.Service.DatabaseConnection;
-import main.java.Service.JTreeRenderer;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
-import javax.swing.event.TreeSelectionEvent;
-import javax.swing.event.TreeSelectionListener;
 import javax.swing.tree.DefaultMutableTreeNode;
-import javax.swing.tree.TreeCellRenderer;
+import javax.swing.tree.DefaultTreeCellRenderer;
 import javax.swing.tree.TreePath;
 import java.awt.*;
 import java.util.Vector;
@@ -49,7 +46,30 @@ public class NavigationPane extends JPanel {
             }
         }
 
-        tree.setCellRenderer(new JTreeRenderer());
+        tree.setCellRenderer(
+                // creating TreeRender class here and passed
+
+                new DefaultTreeCellRenderer() {
+                    @Override
+                    public Component getTreeCellRendererComponent(JTree tree, Object value, boolean sel, boolean expanded, boolean leaf, int row, boolean hasFocus) {
+                        super.getTreeCellRendererComponent(tree, value, sel, expanded, leaf, row, hasFocus);
+
+                        DefaultMutableTreeNode node = (DefaultMutableTreeNode) value;
+                        Object userObject = node.getUserObject();
+
+
+                        if (userObject instanceof Book) {
+                            Book book = (Book) userObject;
+                            this.setText(book.getBookTitle());
+                        } else if (userObject instanceof Chapter) {
+                            Chapter chapter = (Chapter) userObject;
+                            this.setText(chapter.getDisplayName());
+                        }
+
+                        return this;
+                    }
+                });
+
         tree.expandPath(new TreePath(tree.getModel().getRoot()));
         tree.setRootVisible(false);
         tree.setScrollsOnExpand(true);
