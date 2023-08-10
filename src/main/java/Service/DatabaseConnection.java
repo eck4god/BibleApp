@@ -119,6 +119,27 @@ public class DatabaseConnection {
         statement.execute(sql);
     }
 
+    public Vector<Bible> getBibles() throws Exception {
+        Statement statement = conn.createStatement();
+        String sql = "SELECT * FROM Bible;";
+        Vector<Bible> bibles = new Vector<>();
+
+        ResultSet resultSet = statement.executeQuery(sql);
+
+        while (resultSet.next()) {
+            Bible bible = new Bible();
+            bible.setBibleId(resultSet.getLong("bibleId"));
+            bible.setBibleName(resultSet.getString("bibleName"));
+            bible.setBibleShortName(resultSet.getString("bibleShortName"));
+            bible.setYearOfPublication(resultSet.getString("yearOfPublication"));
+            bible.setLang(resultSet.getString("language"));
+            bible.setCopyrightInfo(resultSet.getString("copyrightInfo"));
+            bibles.add(bible);
+        }
+
+        return bibles;
+    }
+
     public Vector<Book> getBooks() throws Exception {
         Statement statement = conn.createStatement();
         String sql = "SELECT * from Book";
