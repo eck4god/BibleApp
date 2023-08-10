@@ -16,6 +16,7 @@ Copyright 2023 Gregory Echelberry
 */
 import main.java.Service.DatabaseConnection;
 import main.java.Service.ProcessJSON;
+import main.java.Service.ProgramDirectoryService;
 import main.java.Views.Application;
 import main.java.Views.WelcomeScreen;
 
@@ -38,13 +39,17 @@ public class BibleApp {
             }
         }
 
+        // Gets program absolute path
+        ProgramDirectoryService programDirectoryService = new ProgramDirectoryService();
+        String path = programDirectoryService.getProgramDirectory();
+
         WelcomeScreen welcomeScreen = new WelcomeScreen();
         welcomeScreen.setVisible(true);
 
         boolean firstRun = false;
         int dbComplete;
 
-        ProcessJSON config = new ProcessJSON(new File("./Resources/config.json"));
+        ProcessJSON config = new ProcessJSON(new File(path + "/Resources/config.json"));
         try {
             firstRun = config.isFirstRun();
         } catch (Exception e) {
@@ -57,7 +62,7 @@ public class BibleApp {
                 DatabaseConnection connection = new DatabaseConnection();
                 dbComplete = connection.setUpDatabase();
                 connection.close();
-                ProcessJSON processJSON = new ProcessJSON(new File("./Resources/kjv.Json"));
+                ProcessJSON processJSON = new ProcessJSON(new File(path + "/Resources/kjv.Json"));
                 int complete = processJSON.saveBibleToDatabase(welcomeScreen);
                 config.setFirstRun();
             } catch (Exception e) {
