@@ -1,9 +1,13 @@
 package main.java.Views;
 
+import main.java.Service.ProgramDirectoryService;
+
 import javax.swing.*;
 import java.awt.*;
 
 public class WelcomeScreen extends JFrame {
+
+    ProgramDirectoryService programDirectoryService = new ProgramDirectoryService();
 
     public WelcomeScreen() {
         this.setUndecorated(true);
@@ -16,7 +20,8 @@ public class WelcomeScreen extends JFrame {
     }
 
     private void createBackground() {
-        ImageIcon img = new ImageIcon("./Resources/bible.jpg");
+        String path =  programDirectoryService.getProgramDirectory();
+        ImageIcon img = new ImageIcon(path+"/Resources/bible.jpg");
 
         JPanel panel = new JPanel() {
             @Override
