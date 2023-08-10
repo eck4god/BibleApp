@@ -272,6 +272,14 @@ public class Application extends JFrame {
     }
 
     public void navigateTo(Long book, Long chapter) {
+        // If no tabs exist, Create one with the first Bible in the list
+        if (tabbedPane.getTabCount() == 0) {
+            addReaderPane(bibles.get(0));
+            tabbedPane.setVisible(true);
+            splitPane.remove(emptyPanel);
+            splitPane.add(tabbedPane);
+        }
+
         ReaderPanel readerPanel = (ReaderPanel) tabbedPane.getSelectedComponent();
         readerPanel.setSearchFields(1L, book, chapter);
     }
