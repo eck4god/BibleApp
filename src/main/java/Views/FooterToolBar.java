@@ -14,15 +14,17 @@ public class FooterToolBar extends JToolBar {
     private ReaderPanel parentPanel;
     private JButton nextPage;
     private JButton prevPage;
+    private Long bibleId;
     private Long book;
     private Long chapter;
     private Vector<Chapter> chapters = new Vector<>();
     private Vector<Chapter> prevChapters = new Vector<>();
 
-    public FooterToolBar(ReaderPanel readerPanel, Long bible, Long book, Long chapter) {
+    public FooterToolBar(ReaderPanel readerPanel, Long bibleId, Long book, Long chapter) {
         ProgramDirectoryService programDirectoryService = new ProgramDirectoryService();
         this.path = programDirectoryService.getProgramDirectory();
         this.parentPanel = readerPanel;
+        this.bibleId = bibleId;
         this.book = book;
         this.chapter = chapter;
 
@@ -135,7 +137,7 @@ public class FooterToolBar extends JToolBar {
     private void getChapters() {
         try {
             DatabaseConnection connection = new DatabaseConnection();
-            chapters = connection.getChapters(1L, book);
+            chapters = connection.getChapters(bibleId, book);
             connection.close();
         } catch (Exception e) {
             JOptionPane.showMessageDialog(this, "Error Retrieving Chapters", "Error", JOptionPane.ERROR_MESSAGE);
@@ -146,7 +148,7 @@ public class FooterToolBar extends JToolBar {
         try {
             DatabaseConnection connection = new DatabaseConnection();
             if (book > 1 && chapter == 1) {
-                prevChapters = connection.getChapters(1L, book - 1L);
+                prevChapters = connection.getChapters(bibleId, book - 1L);
             }
             connection.close();
         } catch (Exception e) {
@@ -155,15 +157,15 @@ public class FooterToolBar extends JToolBar {
 
         if (nextPage) {
             if (chapter == chapters.get(chapters.size() - 1).getChapterId()) {
-                parentPanel.setSearchFields(1L, book + 1, 1L);
+                parentPanel.setSearchFields(bibleId, book + 1, 1L);
             } else {
-                parentPanel.setSearchFields(1L, book, chapter + 1L);
+                parentPanel.setSearchFields(bibleId, book, chapter + 1L);
             }
         } else {
             if (chapter == 1L) {
-                parentPanel.setSearchFields(1L, book - 1, prevChapters.get(prevChapters.size() - 1).getChapterId());
+                parentPanel.setSearchFields(bibleId, book - 1, prevChapters.get(prevChapters.size() - 1).getChapterId());
             } else {
-                parentPanel.setSearchFields(1L, book, chapter - 1L);
+                parentPanel.setSearchFields(bibleId, book, chapter - 1L);
             }
         }
     }

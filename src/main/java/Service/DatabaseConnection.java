@@ -10,9 +10,13 @@ import java.util.Vector;
 
 public class DatabaseConnection {
 
-    Connection conn = null;
-    String url = "jdbc:sqlite:./Resources/test.db";
+    private Connection conn = null;
+    private String path;
+    private String url;
     public DatabaseConnection() throws Exception {
+        ProgramDirectoryService programDirectoryService = new ProgramDirectoryService();
+        path = programDirectoryService.getProgramDirectory();
+        url = "jdbc:sqlite:" + path + "/Resources/test.db";
         conn = DriverManager.getConnection(url);
     }
 
@@ -26,7 +30,7 @@ public class DatabaseConnection {
         Statement statement = conn.createStatement();
 
         // Setup Tables
-        BufferedReader bufferedReader = new BufferedReader(new FileReader("./Tables.sql"));
+        BufferedReader bufferedReader = new BufferedReader(new FileReader(path + "/Resources/Tables.sql"));
         String line;
         StringBuilder query = new StringBuilder();
         while ( (line = bufferedReader.readLine()) != null) {
@@ -42,7 +46,7 @@ public class DatabaseConnection {
         bufferedReader.close();
 
         // Setup Data
-        bufferedReader = new BufferedReader(new FileReader("./preloadData.sql"));
+        bufferedReader = new BufferedReader(new FileReader(path + "/Resources/preloadData.sql"));
         while ( (line = bufferedReader.readLine()) != null) {
             if (line.trim().endsWith(";")) {
                 query.append(line);

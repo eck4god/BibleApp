@@ -14,15 +14,17 @@ import java.util.Vector;
 public class ReaderPanel extends JPanel {
 
     private Vector<BibleLink> bibleLinks = new Vector<>();
+    private Long bibleId;
     private FooterToolBar footerToolBar;
     private JTextPane textArea = new JTextPane();
     private int textSize = 12;
 
     public ReaderPanel(Long bibleId, Long bookId, Long chapterId) {
+        this.bibleId = bibleId;
         BorderLayout layout = new BorderLayout();
         this.setLayout(layout);
         this.setBorder(new EmptyBorder(10,10,10,10));
-        NavigationDropDown navigationDropDown = new NavigationDropDown(this);
+        NavigationDropDown navigationDropDown = new NavigationDropDown(this, bibleId);
         this.add(navigationDropDown, BorderLayout.NORTH);
 
         getBibleLinks(bibleId, bookId, chapterId);
@@ -32,7 +34,7 @@ public class ReaderPanel extends JPanel {
         else
             scrollPane();
 
-        footerToolBar = new FooterToolBar(this, 1L, getBook(), getChapter());
+        footerToolBar = new FooterToolBar(this, bibleId, getBook(), getChapter());
         this.add(footerToolBar, BorderLayout.SOUTH);
     }
 
@@ -108,7 +110,7 @@ public class ReaderPanel extends JPanel {
         return textSize;
     }
 
-    public Long getBible() { return bibleLinks.get(0).getBible().getBibleId(); }
+    public Long getBible() { return bibleId; }
 
     public Long getChapter() {
         return bibleLinks.get(0).getChapter().getChapterId();

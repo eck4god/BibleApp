@@ -10,11 +10,13 @@ import java.util.Vector;
 
 public class NavigationDropDown extends JToolBar {
 
-    Vector<Book> books = new Vector<>();
-    Vector<Chapter> chapters = new Vector<>();
-    ReaderPanel parentPanel;
-    JComboBox chapterSelection = new JComboBox<>();
-    public NavigationDropDown(ReaderPanel panel) {
+    private Long bibleId;
+    private Vector<Book> books = new Vector<>();
+    private Vector<Chapter> chapters = new Vector<>();
+    private ReaderPanel parentPanel;
+    private JComboBox chapterSelection = new JComboBox<>();
+    public NavigationDropDown(ReaderPanel panel, Long bibleId) {
+        this.bibleId = bibleId;
         parentPanel = panel;
         getBooks();
         this.setFloatable(false);
@@ -26,7 +28,7 @@ public class NavigationDropDown extends JToolBar {
         }
         bookSelection.addActionListener(e -> {
             Long bookNumber = null;
-            Long bibleNumb = 1L;
+            Long bibleNumb = bibleId;
             for (Book book : books) {
                 if (bookSelection.getSelectedItem().toString().equals(book.getBookTitle()))
                     bookNumber = book.getBookNumber();
@@ -62,7 +64,7 @@ public class NavigationDropDown extends JToolBar {
             chapterSelection.removeAllItems();
             chapterSelection.addItem("-- Select a Chapter --");
             chapterSelection.setSelectedIndex(0);
-            parentPanel.setSearchFields((long) 1, bookId, chapterId);
+            parentPanel.setSearchFields(bibleId, bookId, chapterId);
         });
 
         bookSelection.setSelectedItem(0);

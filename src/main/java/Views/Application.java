@@ -41,7 +41,6 @@ public class Application extends JFrame {
             y = processJSON.getY();
             isVisible = processJSON.getNavPaneVisible();
         } catch (Exception e) {
-            e.printStackTrace();
             screenWidth = 1024;
             screenHeight = 768;
         }
@@ -324,6 +323,8 @@ public class Application extends JFrame {
         } catch (Exception e) {
             e.printStackTrace();
         }
+
+        getBibles();
     }
 
     public void navigateTo(Long book, Long chapter) {
@@ -336,7 +337,8 @@ public class Application extends JFrame {
         }
 
         ReaderPanel readerPanel = (ReaderPanel) tabbedPane.getSelectedComponent();
-        readerPanel.setSearchFields(1L, book, chapter);
+        Bible selectedBible = bibles.get(tabbedPane.getSelectedIndex());
+        readerPanel.setSearchFields(selectedBible.getBibleId(), book, chapter);
     }
 
     public void getBibles() {
