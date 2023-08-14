@@ -108,6 +108,8 @@ public class ReaderPanel extends JPanel {
         return textSize;
     }
 
+    public Long getBible() { return bibleLinks.get(0).getBible().getBibleId(); }
+
     public Long getChapter() {
         return bibleLinks.get(0).getChapter().getChapterId();
     }
