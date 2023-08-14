@@ -6,15 +6,16 @@ import main.java.Service.ProgramDirectoryService;
 
 import javax.swing.*;
 import java.awt.*;
+import java.util.Objects;
 import java.util.Vector;
 
 public class FooterToolBar extends JToolBar {
 
-    private String path;
-    private ReaderPanel parentPanel;
+    private final String path;
+    private final ReaderPanel parentPanel;
     private JButton nextPage;
     private JButton prevPage;
-    private Long bibleId;
+    private final Long bibleId;
     private Long book;
     private Long chapter;
     private Vector<Chapter> chapters = new Vector<>();
@@ -43,21 +44,17 @@ public class FooterToolBar extends JToolBar {
         panel.setPreferredSize(new Dimension(parentPanel.getWidth() / 3, this.getHeight()));
         panel.setLayout(new FlowLayout(FlowLayout.RIGHT));
         JButton smaller = new JButton();
-        Icon minus = new ImageIcon(path + "/Resources/icons8-minus-24.png");
+        Icon minus = new ImageIcon(path + "/Resources/Icons/minus.png");
         smaller.setIcon(minus);
         smaller.setToolTipText("Font size smaller");
         smaller.setPreferredSize(new Dimension(25,25));
-        smaller.addActionListener(e -> {
-            resizeText(true);
-        });
+        smaller.addActionListener(e -> resizeText(true));
         JButton larger = new JButton();
-        Icon plus = new ImageIcon(path + "/Resources/icons8-plus-24.png");
+        Icon plus = new ImageIcon(path + "/Resources/Icons/plus.png");
         larger.setPreferredSize(new Dimension(25,25));
         larger.setIcon(plus);
         larger.setToolTipText("Font size larger");
-        larger.addActionListener(e -> {
-            resizeText(false);
-        });
+        larger.addActionListener(e -> resizeText(false));
         panel.add(smaller);
         panel.add(larger);
         this.add(panel);
@@ -67,28 +64,18 @@ public class FooterToolBar extends JToolBar {
         JPanel panel = new JPanel();
         panel.setLayout(new FlowLayout(FlowLayout.CENTER));
         nextPage = new JButton();
-        nextPage.setIcon(new ImageIcon(path + "/Resources/icons8-arrow-64.png"));
+        nextPage.setIcon(new ImageIcon(path + "/Resources/Icons/rightArrow.png"));
         nextPage.setPreferredSize(new Dimension(25, 25));
         nextPage.setToolTipText("Next page");
-        if (book == 66 && chapter == 22)
-            nextPage.setEnabled(false);
-        else
-            nextPage.setEnabled(true);
-        nextPage.addActionListener(event -> {
-            navigateChapters(true);
-        });
+        nextPage.setEnabled(book != 66 || chapter != 22);
+        nextPage.addActionListener(event -> navigateChapters(true));
 
         prevPage = new JButton();
-        prevPage.setIcon(new ImageIcon(path + "/Resources/icons8-arrow-64-left.png"));
+        prevPage.setIcon(new ImageIcon(path + "/Resources/Icons/leftArrow.png"));
         prevPage.setPreferredSize(new Dimension(25, 25));
         prevPage.setToolTipText("Previous page");
-        if (book == 1L && chapter == 1L)
-            prevPage.setEnabled(false);
-        else
-            prevPage.setEnabled(true);
-        prevPage.addActionListener(event -> {
-            navigateChapters(false);
-        });
+        prevPage.setEnabled(book != 1L || chapter != 1L);
+        prevPage.addActionListener(event -> navigateChapters(false));
 
         panel.add(prevPage);
         panel.add(nextPage);
@@ -156,7 +143,7 @@ public class FooterToolBar extends JToolBar {
         }
 
         if (nextPage) {
-            if (chapter == chapters.get(chapters.size() - 1).getChapterId()) {
+            if (Objects.equals(chapter, chapters.get(chapters.size() - 1).getChapterId())) {
                 parentPanel.setSearchFields(bibleId, book + 1, 1L);
             } else {
                 parentPanel.setSearchFields(bibleId, book, chapter + 1L);

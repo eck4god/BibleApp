@@ -23,7 +23,7 @@ public class WelcomeScreen extends JFrame {
 
         String path = programDirectoryService.getProgramDirectory();
 
-        ImageIcon img = new ImageIcon(path+"/Resources/bible.jpg");
+        ImageIcon img = new ImageIcon(path+"/Resources/Images/bible.jpg");
 
         JPanel panel = new JPanel() {
             @Override

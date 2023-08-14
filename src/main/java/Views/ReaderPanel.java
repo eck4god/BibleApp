@@ -14,7 +14,7 @@ import java.util.Vector;
 public class ReaderPanel extends JPanel {
 
     private Vector<BibleLink> bibleLinks = new Vector<>();
-    private Long bibleId;
+    private final Long bibleId;
     private FooterToolBar footerToolBar;
     private JTextPane textArea = new JTextPane();
     private int textSize = 12;

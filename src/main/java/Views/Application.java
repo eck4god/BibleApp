@@ -11,6 +11,7 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Objects;
 import java.util.Vector;
 
 public class Application extends JFrame {
@@ -25,7 +26,7 @@ public class Application extends JFrame {
     private JSplitPane splitPane;
     private JTabbedPane tabbedPane;
     private JPanel emptyPanel;
-    private boolean isVisible;
+    private boolean isVisible = true;
 
     public Application() {
         // Gets Absolute Path of Application
@@ -48,7 +49,7 @@ public class Application extends JFrame {
     public boolean setUpFrame() {
         BorderLayout layout = new BorderLayout();
         layout.maximumLayoutSize(this);
-        this.setTitle("Bible Application");
+        this.setTitle("Bibles");
         this.setMinimumSize(new Dimension(1024, 768));
         this.setPreferredSize(new Dimension(screenWidth,screenHeight));
         if (x == null || y == null) {
@@ -145,7 +146,7 @@ public class Application extends JFrame {
 
         // Show/Hide Navigation Pane
         JButton showNavPane = new JButton();
-        showNavPane.setIcon(new ImageIcon(path + "/Resources/icons8-show-sidepanel-100.png"));
+        showNavPane.setIcon(new ImageIcon(path + "/Resources/Icons/sidePanel.png"));
         showNavPane.setPreferredSize(new Dimension(50, 50));
         showNavPane.addActionListener(e -> {
             if (splitPane.getLeftComponent().isVisible()) {
@@ -163,7 +164,7 @@ public class Application extends JFrame {
 
         // Open new book
         JButton openBook = new JButton();
-        openBook.setIcon(new ImageIcon(path + "/Resources/icons8-literature-64.png"));
+        openBook.setIcon(new ImageIcon(path + "/Resources/Icons/openBible.png"));
         openBook.setToolTipText("Open a Bible");
         openBook.setPreferredSize(new Dimension(50, 50));
         openBook.addActionListener(event -> addBibleDialog());
@@ -172,7 +173,7 @@ public class Application extends JFrame {
 
         // Import Button
         JButton importBook = new JButton();
-        importBook.setIcon(new ImageIcon(path + "/Resources/icons8-import-50.png"));
+        importBook.setIcon(new ImageIcon(path + "/Resources/Icons/import.png"));
         importBook.setPreferredSize(new Dimension(50, 50));
         importBook.setToolTipText("Import a new Bible");
         importBook.addActionListener(event -> importDialog());
@@ -192,8 +193,7 @@ public class Application extends JFrame {
         try {
             tabs = processJSON.getTabs();
         } catch (Exception e) {
-            e.printStackTrace();
-            JOptionPane.showMessageDialog(this, "Error retrieving config file", "Error", JOptionPane.ERROR_MESSAGE);
+
         }
 
         // Restore tabs
@@ -203,7 +203,7 @@ public class Application extends JFrame {
             for (Long[] tab : tabs) {
                 Bible selected = new Bible();
                 for (Bible bible : bibles) {
-                    if (bible.getBibleId() == tab[0]) {
+                    if (Objects.equals(bible.getBibleId(), tab[0])) {
                         selected = bible;
                     }
                 }
@@ -225,7 +225,7 @@ public class Application extends JFrame {
         tabPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
         JLabel label = new JLabel(bible.getBibleShortName());
         JButton closeButton = new JButton();
-        closeButton.setIcon(new ImageIcon(path + "/Resources/icons8-x-18.png"));
+        closeButton.setIcon(new ImageIcon(path + "/Resources/Icons/close.png"));
         closeButton.setPreferredSize(new Dimension(18, 18));
         closeButton.setToolTipText("Close Tab");
         closeButton.addActionListener(event -> {
@@ -364,7 +364,7 @@ public class Application extends JFrame {
         // Make Labels
         JPanel labelPanel = new JPanel();
         setLayout(new BorderLayout());
-        JLabel icon = new JLabel(new ImageIcon(path + "/Resources/icons8-literature-64.png"));
+        JLabel icon = new JLabel(new ImageIcon(path + "/Resources/Icons/openBible.png"));
         JLabel label = new JLabel("Please select a Bible");
         label.setFont(new Font("Serif", Font.PLAIN, 18));
         labelPanel.add(icon);

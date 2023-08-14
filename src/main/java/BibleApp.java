@@ -31,7 +31,7 @@ public class BibleApp {
         if (System.getProperty("os.name").equals("Mac OS X")) {
             System.setProperty( "apple.awt.application.appearance", "system" );
             System.setProperty( "apple.laf.useScreenMenuBar", "true" );
-            System.setProperty( "apple.awt.application.name", "Bible Reader" );
+            System.setProperty( "apple.awt.application.name", "Bibles" );
             try {
                 UIManager.setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName());
             } catch (Exception e) {
@@ -62,7 +62,7 @@ public class BibleApp {
                 DatabaseConnection connection = new DatabaseConnection();
                 dbComplete = connection.setUpDatabase();
                 connection.close();
-                ProcessJSON processJSON = new ProcessJSON(new File(path + "/Resources/kjv.Json"));
+                ProcessJSON processJSON = new ProcessJSON(new File(path + "/Resources/Bibles/kjv.Json"));
                 int complete = processJSON.saveBibleToDatabase(welcomeScreen);
                 config.setFirstRun();
             } catch (Exception e) {
