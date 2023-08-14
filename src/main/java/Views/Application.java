@@ -3,7 +3,6 @@ import main.java.Data.Bible;
 import main.java.Service.DatabaseConnection;
 import main.java.Service.ProcessJSON;
 import main.java.Service.ProgramDirectoryService;
-
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.filechooser.FileNameExtensionFilter;
@@ -11,28 +10,53 @@ import java.awt.*;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Vector;
 
 public class Application extends JFrame {
 
-    private String path;
+    private final String path;
+    private int screenWidth;
+    private int screenHeight;
+    private Integer x;
+    private Integer y;
     private File selectedFile;
     private Vector<Bible> bibles;
     private JSplitPane splitPane;
     private JTabbedPane tabbedPane;
     private JPanel emptyPanel;
+    private boolean isVisible;
 
     public Application() {
+        // Gets Absolute Path of Application
         ProgramDirectoryService programDirectoryService = new ProgramDirectoryService();
         path = programDirectoryService.getProgramDirectory();
+
+        // Reads config.json and sets screen size
+        ProcessJSON processJSON = new ProcessJSON(new File(path + "/Resources/config.json"));
+        try {
+            screenWidth = processJSON.getScreenWidth();
+            screenHeight = processJSON.getScreenHeight();
+            x = processJSON.getX();
+            y = processJSON.getY();
+            isVisible = processJSON.getNavPaneVisible();
+        } catch (Exception e) {
+            e.printStackTrace();
+            screenWidth = 1024;
+            screenHeight = 768;
+        }
     }
     public boolean setUpFrame() {
         BorderLayout layout = new BorderLayout();
         layout.maximumLayoutSize(this);
         this.setTitle("Bible Application");
         this.setMinimumSize(new Dimension(1024, 768));
-        this.setSize(1024,768);
-        this.setLocationRelativeTo(null);
+        this.setPreferredSize(new Dimension(screenWidth,screenHeight));
+        if (x == null || y == null) {
+            this.setLocationRelativeTo(null);
+        } else {
+            this.setLocation(x, y);
+        }
         this.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         this.setLayout(layout);
         getBibles();
@@ -42,11 +66,14 @@ public class Application extends JFrame {
         navigationPane.setVisible(true);
         createReaderTabbedPane();
         splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, navigationPane, tabbedPane);
+        if (!isVisible)
+            splitPane.getLeftComponent().setVisible(false);
         this.getContentPane().add(splitPane);
         this.pack();
         this.addWindowListener(new WindowAdapter() {
             @Override
             public void windowClosing(WindowEvent e) {
+                performQuit();
                 e.getWindow().dispose();
                 System.exit(0);
             }
@@ -57,6 +84,7 @@ public class Application extends JFrame {
             desktop.setQuitHandler((e, response) -> {
                 boolean canQuit = System.getProperty("os.name").equals("Mac OS X"); // Enables or Disables Menu Quit command on Mac OS X
                 if (canQuit) {
+                    performQuit();
                     response.performQuit();
                 } else
                     response.cancelQuit();
@@ -78,6 +106,7 @@ public class Application extends JFrame {
             file.add(new JSeparator());
             JMenuItem quit = new JMenuItem("Quit");
             quit.addActionListener(e -> {
+                performQuit();
                 this.setVisible(false);
                 this.dispose();
                 System.exit(0);
@@ -158,12 +187,38 @@ public class Application extends JFrame {
     private void createReaderTabbedPane() {
         tabbedPane = new JTabbedPane();
 
-        addReaderPane(bibles.get(0));
+        // Get Saved tabs and restore them
+        ArrayList<Long[]> tabs = new ArrayList<>();
+        ProcessJSON processJSON = new ProcessJSON(new File(path + "/Resources/config.json"));
+        try {
+            tabs = processJSON.getTabs();
+        } catch (Exception e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(this, "Error retrieving config file", "Error", JOptionPane.ERROR_MESSAGE);
+        }
+
+        // Restore tabs
+        if (tabs.isEmpty()) {
+            addReaderPane(bibles.get(0), 1L, 1L);
+        } else {
+            for (Long[] tab : tabs) {
+                Bible selected = new Bible();
+                for (Bible bible : bibles) {
+                    if (bible.getBibleId() == tab[0]) {
+                        selected = bible;
+                    }
+                }
+                addReaderPane(selected, tab[1], tab[2]);
+                if (tab[3] == 1) {
+                    tabbedPane.setSelectedIndex(tabbedPane.getTabCount() - 1);
+                }
+            }
+        }
     }
 
-    private void addReaderPane(Bible bible) {
+    private void addReaderPane(Bible bible, Long bookId, Long chapterId) {
         int index = tabbedPane.getTabCount();
-        ReaderPanel readerPanel = new ReaderPanel(bible.getBibleId(), 1L, 1L);
+        ReaderPanel readerPanel = new ReaderPanel(bible.getBibleId(), bookId, chapterId);
 
         // Creates Tab Label and close button
         JPanel tabPanel = new JPanel();
@@ -274,7 +329,7 @@ public class Application extends JFrame {
     public void navigateTo(Long book, Long chapter) {
         // If no tabs exist, Create one with the first Bible in the list
         if (tabbedPane.getTabCount() == 0) {
-            addReaderPane(bibles.get(0));
+            addReaderPane(bibles.get(0), 1L, 1L);
             tabbedPane.setVisible(true);
             splitPane.remove(emptyPanel);
             splitPane.add(tabbedPane);
@@ -315,7 +370,7 @@ public class Application extends JFrame {
 
         // Drop Down
         JPanel dropDownPanel = new JPanel();
-        JComboBox comboBox = new JComboBox<>();
+        JComboBox<Object> comboBox = new JComboBox<>();
         comboBox.addItem("-- Select a Bible --");
         for (Bible bible : bibles) {
             comboBox.addItem(bible.getBibleName());
@@ -337,7 +392,7 @@ public class Application extends JFrame {
         submitButton.addActionListener(e -> {
             for (Bible bible : bibles) {
                 if (comboBox.getSelectedItem().toString().equals(bible.getBibleName())) {
-                    addReaderPane(bible);
+                    addReaderPane(bible, 1L, 1L);
                 }
             }
             if (tabbedPane.getTabCount() == 1) {
@@ -345,6 +400,7 @@ public class Application extends JFrame {
                 splitPane.remove(emptyPanel);
                 splitPane.add(tabbedPane);
             }
+            tabbedPane.setSelectedIndex(tabbedPane.getTabCount() - 1);
             dialog.setVisible(false);
             dialog.dispose();
         });
@@ -356,5 +412,36 @@ public class Application extends JFrame {
         panel.add(buttonPanel, BorderLayout.SOUTH);
         dialog.add(panel);
         dialog.setVisible(true);
+    }
+
+    private void performQuit() {
+        // Get open tabs to save to config.json
+        ArrayList<Long[]> openTabs = new ArrayList<>();
+        Long isSelected;
+        for (int i = 0; i < tabbedPane.getTabCount(); i++) {
+            ReaderPanel readerPanel = (ReaderPanel) tabbedPane.getComponentAt(i);
+            if (tabbedPane.getSelectedIndex() == i)
+                isSelected = 1L;
+            else
+                isSelected = 0L;
+            Long[] tab = {
+                    readerPanel.getBible(),
+                    readerPanel.getBook(),
+                    readerPanel.getChapter(),
+                    isSelected
+
+            };
+            openTabs.add(tab);
+        }
+
+        ProcessJSON processJSON = new ProcessJSON(new File(path + "/Resources/config.json"));
+        try {
+            processJSON.setScreenHeight(this.getWidth(), this.getHeight());
+            processJSON.setWindowPosition(this.getX(), this.getY());
+            processJSON.saveTabs(openTabs);
+            processJSON.setNavPaneVisible(splitPane.getLeftComponent().isVisible());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }

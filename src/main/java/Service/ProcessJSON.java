@@ -4,6 +4,7 @@ import java.awt.*;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
+import java.util.ArrayList;
 import java.util.List;
 
 import main.java.Data.Indexs;
@@ -155,5 +156,135 @@ public class ProcessJSON {
         worker.execute();
         jDialog.setVisible(true);
         return 0;
+    }
+
+    public int getScreenWidth() throws Exception {
+        JSONParser parser = new JSONParser();
+        Object obj = parser.parse(new FileReader(file));
+        JSONObject jsonObject = (JSONObject) obj;
+        Long screenWidth = (Long) jsonObject.get("screenWidth");
+        jsonObject.clear();
+        return screenWidth.intValue();
+    }
+
+
+    public int getScreenHeight() throws Exception {
+        JSONParser parser = new JSONParser();
+        Object obj = parser.parse(new FileReader(file));
+        JSONObject jsonObject = (JSONObject) obj;
+        Long screenHeight = (Long) jsonObject.get("screenHeight");
+        jsonObject.clear();
+        return screenHeight.intValue();
+    }
+
+    public void setScreenHeight(Integer screenWidth, Integer screenHeight) throws Exception {
+        JSONParser parser = new JSONParser();
+        Object obj = parser.parse(new FileReader(file));
+        JSONObject jsonObject = (JSONObject) obj;
+        jsonObject.put("screenWidth", screenWidth.longValue());
+        jsonObject.put("screenHeight", screenHeight.longValue());
+        FileWriter fileWriter = new FileWriter(file);
+        fileWriter.write(jsonObject.toJSONString());
+        fileWriter.close();
+        jsonObject.clear();
+    }
+
+    public Integer getX() throws Exception {
+        JSONParser parser = new JSONParser();
+        Object obj = parser.parse(new FileReader(file));
+        JSONObject jsonObject = (JSONObject) obj;
+        Long x = (Long) jsonObject.get("windowX");
+        jsonObject.clear();
+        if (x == null)
+            return null;
+        else
+            return x.intValue();
+    }
+
+    public Integer getY() throws Exception {
+        JSONParser parser = new JSONParser();
+        Object obj = parser.parse(new FileReader(file));
+        JSONObject jsonObject = (JSONObject) obj;
+        Long y = (Long) jsonObject.get("windowY");
+        jsonObject.clear();
+        if (y == null)
+            return null;
+        else
+            return y.intValue();
+    }
+
+    public void setWindowPosition(Integer x, Integer y) throws Exception {
+        JSONParser parser = new JSONParser();
+        Object obj = parser.parse(new FileReader(file));
+        JSONObject jsonObject = (JSONObject) obj;
+        jsonObject.put("windowX", x.longValue());
+        jsonObject.put("windowY", y.longValue());
+        FileWriter fileWriter = new FileWriter(file);
+        fileWriter.write(jsonObject.toJSONString());
+        fileWriter.close();
+        jsonObject.clear();
+    }
+
+    public ArrayList<Long[]> getTabs() throws Exception {
+        ArrayList<Long[]> openTabs = new ArrayList<>();
+        JSONParser parser = new JSONParser();
+        Object obj = parser.parse(new FileReader(file));
+        JSONObject jsonObject = (JSONObject) obj;
+        JSONArray tabs = (JSONArray) jsonObject.get("openTabs");
+
+        for (Object object : tabs) {
+            JSONObject tab = (JSONObject) object;
+            Long[] tabData = {
+                    (Long) tab.get("bibleId"),
+                    (Long) tab.get("bookId"),
+                    (Long) tab.get("chapterId"),
+                    (Long) tab.get("isSelected")
+            };
+            openTabs.add(tabData);
+        }
+
+        return openTabs;
+    }
+
+    public void saveTabs(ArrayList<Long[]> tabs) throws Exception {
+        JSONParser parser = new JSONParser();
+        Object obj = parser.parse(new FileReader(file));
+        JSONObject jsonObject = (JSONObject) obj;
+
+        JSONArray tabArray = new JSONArray();
+        for (Long[] tab : tabs) {
+            JSONObject tabData = new JSONObject();
+            tabData.put("bibleId", tab[0]);
+            tabData.put("bookId", tab[1]);
+            tabData.put("chapterId", tab[2]);
+            tabData.put("isSelected", tab[3]);
+
+            tabArray.add(tabData);
+        }
+        jsonObject.put("openTabs", tabArray);
+
+        FileWriter fileWriter = new FileWriter(file);
+        fileWriter.write(jsonObject.toJSONString());
+        fileWriter.close();
+        jsonObject.clear();
+    }
+
+    public void setNavPaneVisible(boolean isVisible) throws Exception {
+        JSONParser parser = new JSONParser();
+        Object obj = parser.parse(new FileReader(file));
+        JSONObject jsonObject = (JSONObject) obj;
+        jsonObject.put("navPaneVisible", isVisible);
+        FileWriter fileWriter = new FileWriter(file);
+        fileWriter.write(jsonObject.toJSONString());
+        fileWriter.close();
+        jsonObject.clear();
+    }
+
+    public boolean getNavPaneVisible() throws Exception {
+        JSONParser parser = new JSONParser();
+        Object obj = parser.parse(new FileReader(file));
+        JSONObject jsonObject = (JSONObject) obj;
+        boolean isVisible = (boolean) jsonObject.get("navPaneVisible");
+        return isVisible;
     }
 }
