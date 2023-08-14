@@ -16,7 +16,7 @@ public class DatabaseConnection {
     public DatabaseConnection() throws Exception {
         ProgramDirectoryService programDirectoryService = new ProgramDirectoryService();
         path = programDirectoryService.getProgramDirectory();
-        url = "jdbc:sqlite:" + path + "/Resources/test.db";
+        url = "jdbc:sqlite:" + path + "/Resources/Data/bibles.db";
         conn = DriverManager.getConnection(url);
     }
 
@@ -30,7 +30,7 @@ public class DatabaseConnection {
         Statement statement = conn.createStatement();
 
         // Setup Tables
-        BufferedReader bufferedReader = new BufferedReader(new FileReader(path + "/Resources/Tables.sql"));
+        BufferedReader bufferedReader = new BufferedReader(new FileReader(path + "/Resources/Data/Tables.sql"));
         String line;
         StringBuilder query = new StringBuilder();
         while ( (line = bufferedReader.readLine()) != null) {
@@ -46,7 +46,7 @@ public class DatabaseConnection {
         bufferedReader.close();
 
         // Setup Data
-        bufferedReader = new BufferedReader(new FileReader(path + "/Resources/preloadData.sql"));
+        bufferedReader = new BufferedReader(new FileReader(path + "/Resources/Data/preloadData.sql"));
         while ( (line = bufferedReader.readLine()) != null) {
             if (line.trim().endsWith(";")) {
                 query.append(line);
