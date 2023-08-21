@@ -21,11 +21,15 @@ public class Application extends JFrame {
     private int screenHeight;
     private Integer x;
     private Integer y;
+    private Integer textSize;
     private File selectedFile;
     private Vector<Bible> bibles;
     private JSplitPane splitPane;
+    private JSplitPane verticalSplitPane;
     private JTabbedPane tabbedPane;
+    private JTabbedPane notesPane;
     private JPanel emptyPanel;
+    private NotesPanel notesPanel;
     private boolean isVisible = true;
 
     public Application() {
@@ -41,9 +45,11 @@ public class Application extends JFrame {
             x = processJSON.getX();
             y = processJSON.getY();
             isVisible = processJSON.getNavPaneVisible();
+            textSize = processJSON.getTextSize();
         } catch (Exception e) {
             screenWidth = 1024;
             screenHeight = 768;
+            e.printStackTrace();
         }
     }
     public boolean setUpFrame() {
@@ -65,7 +71,10 @@ public class Application extends JFrame {
         NavigationPane navigationPane = new NavigationPane(this);
         navigationPane.setVisible(true);
         createReaderTabbedPane();
-        splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, navigationPane, tabbedPane);
+        createNotesTabbedPane();
+        verticalSplitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, tabbedPane, notesPane);
+        verticalSplitPane.setResizeWeight(0.75);
+        splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, navigationPane, verticalSplitPane);
         if (!isVisible)
             splitPane.getLeftComponent().setVisible(false);
         this.getContentPane().add(splitPane);
@@ -186,6 +195,12 @@ public class Application extends JFrame {
 
     private void createReaderTabbedPane() {
         tabbedPane = new JTabbedPane();
+        tabbedPane.addChangeListener(event -> {
+            ReaderPanel temp = (ReaderPanel) tabbedPane.getSelectedComponent();
+            if (notesPanel != null) {
+                updateNotes(temp.getBible(), temp.getBook(), temp.getChapter());
+            }
+        });
 
         // Get Saved tabs and restore them
         ArrayList<Long[]> tabs = new ArrayList<>();
@@ -193,7 +208,7 @@ public class Application extends JFrame {
         try {
             tabs = processJSON.getTabs();
         } catch (Exception e) {
-
+            e.printStackTrace();
         }
 
         // Restore tabs
@@ -217,7 +232,7 @@ public class Application extends JFrame {
 
     private void addReaderPane(Bible bible, Long bookId, Long chapterId) {
         int index = tabbedPane.getTabCount();
-        ReaderPanel readerPanel = new ReaderPanel(bible.getBibleId(), bookId, chapterId);
+        ReaderPanel readerPanel = new ReaderPanel(this, textSize, bible.getBibleId(), bookId, chapterId);
 
         // Creates Tab Label and close button
         JPanel tabPanel = new JPanel();
@@ -254,6 +269,24 @@ public class Application extends JFrame {
         tabbedPane.setVisible(false);
         splitPane.remove(tabbedPane);
         splitPane.add(emptyPanel);
+    }
+
+    private void createNotesTabbedPane() {
+
+        notesPane = new JTabbedPane();
+        createNotesTab();
+
+    }
+
+    private void createNotesTab() {
+        ReaderPanel readerPanel = (ReaderPanel) tabbedPane.getSelectedComponent();
+        notesPanel = new NotesPanel(this, textSize, readerPanel.getBible(), readerPanel.getBook(), readerPanel.getChapter());
+
+        notesPane.addTab("Notes", notesPanel);
+    }
+
+    public void updateNotes(Long bibleId, Long bookId, Long chapterId) {
+        notesPanel.updateNotes(bibleId, bookId, chapterId);
     }
 
     private void importDialog() {
@@ -334,11 +367,17 @@ public class Application extends JFrame {
             tabbedPane.setVisible(true);
             splitPane.remove(emptyPanel);
             splitPane.add(tabbedPane);
+            updateNotes(bibles.get(0).getBibleId(), 1L, 1L);
         }
 
         ReaderPanel readerPanel = (ReaderPanel) tabbedPane.getSelectedComponent();
-        Bible selectedBible = bibles.get(tabbedPane.getSelectedIndex());
-        readerPanel.setSearchFields(selectedBible.getBibleId(), book, chapter);
+        readerPanel.setSearchFields(readerPanel.getBible(), book, chapter);
+        updateNotes(readerPanel.getBible(), book, chapter);
+    }
+
+    public void setTextSize(int textSize) {
+        this.textSize = textSize;
+        notesPanel.setTextSize(textSize);
     }
 
     public void getBibles() {
@@ -393,7 +432,7 @@ public class Application extends JFrame {
         submitButton.setForeground(Color.WHITE);
         submitButton.addActionListener(e -> {
             for (Bible bible : bibles) {
-                if (comboBox.getSelectedItem().toString().equals(bible.getBibleName())) {
+                if (Objects.equals(Objects.requireNonNull(comboBox.getSelectedItem()).toString(), bible.getBibleName())) {
                     addReaderPane(bible, 1L, 1L);
                 }
             }
@@ -419,7 +458,7 @@ public class Application extends JFrame {
     private void performQuit() {
         // Get open tabs to save to config.json
         ArrayList<Long[]> openTabs = new ArrayList<>();
-        Long isSelected;
+        long isSelected;
         for (int i = 0; i < tabbedPane.getTabCount(); i++) {
             ReaderPanel readerPanel = (ReaderPanel) tabbedPane.getComponentAt(i);
             if (tabbedPane.getSelectedIndex() == i)
@@ -442,6 +481,7 @@ public class Application extends JFrame {
             processJSON.setWindowPosition(this.getX(), this.getY());
             processJSON.saveTabs(openTabs);
             processJSON.setNavPaneVisible(splitPane.getLeftComponent().isVisible());
+            processJSON.setTextSize(textSize);
         } catch (Exception e) {
             e.printStackTrace();
         }

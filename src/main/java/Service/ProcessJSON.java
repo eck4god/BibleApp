@@ -7,7 +7,7 @@ import java.io.FileWriter;
 import java.util.ArrayList;
 import java.util.List;
 
-import main.java.Data.Indexs;
+import main.java.Data.Indexes;
 import main.java.Data.Verse;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -83,17 +83,17 @@ public class ProcessJSON {
 
         // Access Database and Save Data
         DatabaseConnection databaseConnection = new DatabaseConnection();
-        Indexs indexs = databaseConnection.getIndex();
+        Indexes indexes = databaseConnection.getIndex();
 
         databaseConnection.insertBible(
-                indexs.getBibleId() + 1,
+                indexes.getBibleId() + 1,
                 metaData.get("name").toString(),
                 metaData.get("shortname").toString(),
                 metaData.get("year").toString(),
                 metaData.get("lang").toString(),
                 metaData.get("copyright_statement").toString()
         );
-        indexs.setBibleId(indexs.getBibleId() + 1);
+        indexes.setBibleId(indexes.getBibleId() + 1);
 
         SwingWorker<Void, Integer> worker = new SwingWorker<>() {
 
@@ -113,21 +113,21 @@ public class ProcessJSON {
                     StringBuilder newText = new StringBuilder(text);
 
                     databaseConnection.insertVerse(
-                            indexs.getVerseId() + 1,
+                            indexes.getVerseId() + 1,
                             verse.get("verse").toString(),
                             text
                     );
 
                     databaseConnection.insertBibleLink(
-                            indexs.getBibleLinkId() + 1,
-                            indexs.getBibleId(),
+                            indexes.getBibleLinkId() + 1,
+                            indexes.getBibleId(),
                             (Long) verse.get("book"),
                             (Long) verse.get("chapter"),
-                            indexs.getVerseId() + 1
+                            indexes.getVerseId() + 1
                     );
 
-                    indexs.setVerseId(indexs.getVerseId() + 1);
-                    indexs.setBibleLinkId(indexs.getBibleLinkId() + 1);
+                    indexes.setVerseId(indexes.getVerseId() + 1);
+                    indexes.setBibleLinkId(indexes.getBibleLinkId() + 1);
                     publish(i + 1);
                 }
 
@@ -143,7 +143,7 @@ public class ProcessJSON {
             @Override
             protected void done() {
                 try {
-                    databaseConnection.writeIndexs(indexs);
+                    databaseConnection.writeIndexes(indexes);
 
                     databaseConnection.close();
                     jDialog.setVisible(false);
@@ -242,6 +242,7 @@ public class ProcessJSON {
             };
             openTabs.add(tabData);
         }
+        jsonObject.clear();
 
         return openTabs;
     }
@@ -285,6 +286,28 @@ public class ProcessJSON {
         Object obj = parser.parse(new FileReader(file));
         JSONObject jsonObject = (JSONObject) obj;
         boolean isVisible = (boolean) jsonObject.get("navPaneVisible");
+        jsonObject.clear();
         return isVisible;
+    }
+
+    public void setTextSize(Integer textSize) throws Exception {
+        JSONParser parser = new JSONParser();
+        Object obj = parser.parse(new FileReader(file));
+        JSONObject jsonObject = (JSONObject) obj;
+        jsonObject.put("textSize", textSize);
+        FileWriter fileWriter = new FileWriter(file);
+        fileWriter.write(jsonObject.toJSONString());
+        fileWriter.close();
+        jsonObject.clear();
+    }
+
+    public Integer getTextSize() throws Exception {
+        JSONParser parser = new JSONParser();
+        Object obj = parser.parse(new FileReader(file));
+        JSONObject jsonObject = (JSONObject) obj;
+        Long temp = (Long) jsonObject.get("textSize");
+        Integer textSize = temp.intValue();
+        jsonObject.clear();
+        return textSize;
     }
 }

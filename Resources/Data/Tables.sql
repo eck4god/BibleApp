@@ -33,11 +33,21 @@ CREATE TABLE IF NOT EXISTS BibleLink (
 	verseId BIGINT
 ) WITHOUT ROWID;
 
-CREATE TABLE IF NOT EXISTS Indexs (
+CREATE TABLE IF NOT EXISTS Indexes (
 	indexId BIGINT PRIMARY KEY,
 	bibleId BIGINT,
 	bookId BIGINT,
 	chapterId BIGINT,
 	verseId BIGINT,
-	bibleLinkId BIGINT
+	bibleLinkId BIGINT,
+	noteId BIGINT
+) WITHOUT ROWID;
+
+CREATE TABLE IF NOT EXISTS Notes (
+    noteId BIGINT PRIMARY KEY,
+    bibleId BIGINT,
+    bookId BIGINT,
+    chapterId BIGINT,
+    verseId BIGINT,
+    noteText VARCHAR(2000000)
 ) WITHOUT ROWID;
