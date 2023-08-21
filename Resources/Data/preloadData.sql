@@ -214,4 +214,4 @@ INSERT INTO Chapters (chapterId, chapter, displayName) VALUES (147, '147', 'Chap
 INSERT INTO Chapters (chapterId, chapter, displayName) VALUES (148, '148', 'Chapter 148');
 INSERT INTO Chapters (chapterId, chapter, displayName) VALUES (149, '149', 'Chapter 149');
 INSERT INTO Chapters (chapterId, chapter, displayName) VALUES (150, '150', 'Chapter 150');
-INSERT INTO Indexs (indexId, bibleId, bookId, chapterId, verseId, bibleLinkId) VALUES (1, 0, 66, 150, 0, 0);
+INSERT INTO Indexes (indexId, bibleId, bookId, chapterId, verseId, bibleLinkId, noteId) VALUES (1, 0, 66, 150, 0, 0, 0);

@@ -13,13 +13,16 @@ import java.util.Vector;
 
 public class ReaderPanel extends JPanel {
 
+    private Application parentFrame;
     private Vector<BibleLink> bibleLinks = new Vector<>();
     private final Long bibleId;
     private FooterToolBar footerToolBar;
     private JTextPane textArea = new JTextPane();
-    private int textSize = 12;
+    private int textSize;
 
-    public ReaderPanel(Long bibleId, Long bookId, Long chapterId) {
+    public ReaderPanel(Application parentFrame, int textSize, Long bibleId, Long bookId, Long chapterId) {
+        this.parentFrame = parentFrame;
+        this.textSize = textSize;
         this.bibleId = bibleId;
         BorderLayout layout = new BorderLayout();
         this.setLayout(layout);
@@ -58,6 +61,7 @@ public class ReaderPanel extends JPanel {
         getBibleLinks(bibleId, bookId, chapterId);
         textArea.setDocument(createHTMLDocument());
         footerToolBar.updateBookAndChapter(bookId, chapterId);
+        parentFrame.updateNotes(bibleId, bookId, chapterId);
     }
 
     public void getBibleLinks(Long bibleId, Long bookId, Long chapterId) {
@@ -104,6 +108,7 @@ public class ReaderPanel extends JPanel {
     public void setTextSize(int textSize) {
         this.textSize = textSize;
         textArea.setDocument(createHTMLDocument());
+        parentFrame.setTextSize(textSize);
     }
 
     public int getTextSize() {

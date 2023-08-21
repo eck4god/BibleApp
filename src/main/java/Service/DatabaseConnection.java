@@ -5,18 +5,18 @@ import main.java.Data.*;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.sql.*;
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Vector;
 
 public class DatabaseConnection {
 
-    private Connection conn = null;
-    private String path;
-    private String url;
+    private final Connection conn;
+    private final String path;
+
     public DatabaseConnection() throws Exception {
         ProgramDirectoryService programDirectoryService = new ProgramDirectoryService();
         path = programDirectoryService.getProgramDirectory();
-        url = "jdbc:sqlite:" + path + "/Resources/Data/bibles.db";
+        String url = "jdbc:sqlite:" + path + "/Resources/Data/bibles.db";
         conn = DriverManager.getConnection(url);
     }
 
@@ -94,31 +94,33 @@ public class DatabaseConnection {
         return 0;
     }
 
-    public Indexs getIndex() throws Exception {
+    public Indexes getIndex() throws Exception {
         Statement statement = conn.createStatement();
-        String sql = "SELECT * FROM Indexs;";
+        String sql = "SELECT * FROM Indexes;";
 
         ResultSet resultSet = statement.executeQuery(sql);
-        Indexs indexs = new Indexs();
+        Indexes indexes = new Indexes();
 
-        indexs.setIndexId(resultSet.getLong("indexId"));
-        indexs.setBibleId(resultSet.getLong("bibleId"));
-        indexs.setBookId(resultSet.getLong("bookId"));
-        indexs.setChapterId(resultSet.getLong("chapterId"));
-        indexs.setVerseId(resultSet.getLong("verseId"));
-        indexs.setBibleLinkId(resultSet.getLong("bibleLinkId"));
+        indexes.setIndexId(resultSet.getLong("indexId"));
+        indexes.setBibleId(resultSet.getLong("bibleId"));
+        indexes.setBookId(resultSet.getLong("bookId"));
+        indexes.setChapterId(resultSet.getLong("chapterId"));
+        indexes.setVerseId(resultSet.getLong("verseId"));
+        indexes.setBibleLinkId(resultSet.getLong("bibleLinkId"));
+        indexes.setNotesId(resultSet.getLong("noteId"));
 
-        return indexs;
+        return indexes;
     }
 
-    public void writeIndexs(Indexs indexs) throws Exception {
+    public void writeIndexes(Indexes indexes) throws Exception {
         Statement statement = conn.createStatement();
-        String sql = "UPDATE Indexs SET bibleId = " + indexs.getBibleId() +
-                ", bookId = " + indexs.getBookId() +
-                ", chapterId = " + indexs.getChapterId() +
-                ", verseId = " + indexs.getVerseId() +
-                ", bibleLinkId = " + indexs.getBibleLinkId() +
-                " Where indexId = " + indexs.getIndexId() + ";";
+        String sql = "UPDATE Indexes SET bibleId = " + indexes.getBibleId() +
+                ", bookId = " + indexes.getBookId() +
+                ", chapterId = " + indexes.getChapterId() +
+                ", verseId = " + indexes.getVerseId() +
+                ", bibleLinkId = " + indexes.getBibleLinkId() +
+                ", noteId = " + indexes.getNotesId() +
+                " Where indexId = " + indexes.getIndexId() + ";";
 
         statement.execute(sql);
     }
@@ -182,6 +184,48 @@ public class DatabaseConnection {
         return chapters;
     }
 
+    public Vector<Chapter> getChaptersByChapterId(Vector<Long> chapterId) throws Exception {
+        Vector<Chapter> chapters = new Vector<>();
+        Statement statement = conn.createStatement();
+        String sql = "SELECT * FROM Chapters WHERE chapterId in (";
+        for (int i = 0; i < chapterId.size(); i++) {
+            if (i + 1 == chapterId.size()) {
+                sql = sql.concat(chapterId.get(i).toString());
+            } else {
+                sql = sql.concat(chapterId.get(i).toString() + ", ");
+            }
+        }
+        sql = sql.concat(");");
+
+        ResultSet resultSet = statement.executeQuery(sql);
+
+        while (resultSet.next()) {
+            Chapter chapter = new Chapter();
+
+            chapter.setChapterId(resultSet.getLong("chapterId"));
+            chapter.setChapter(resultSet.getString("chapter"));
+            chapter.setDisplayName(resultSet.getString("displayName"));
+
+            chapters.add(chapter);
+        }
+
+        return chapters;
+    }
+
+    public Long getVerseCount(Long bibleId, Long bookId, Long chapterId) throws Exception {
+        Statement statement = conn.createStatement();
+        String sql = "SELECT COUNT(verseId) FROM BibleLink WHERE bibleId = " + bibleId +
+                " AND bookId = " + bookId + " AND chapterId = " + chapterId + ";";
+
+        ResultSet resultSet = statement.executeQuery(sql);
+        Long count = 0L;
+
+        while (resultSet.next()) {
+            count = resultSet.getLong(1);
+        }
+        return count;
+    }
+
     public Vector<BibleLink> getBibleLink(Long bibleId, Long bookId, Long chapterId) throws Exception {
         Statement statement = conn.createStatement();
         String sql = "SELECT * FROM BibleLink AS bl LEFT JOIN Bible AS b ON bl.bibleId = b.bibleId LEFT JOIN Book AS bo " +
@@ -227,5 +271,59 @@ public class DatabaseConnection {
         }
 
         return bibleLinks;
+    }
+
+    public Vector<Notes> getNotes(Long bibleId, Long bookId, Long chapterId) throws Exception {
+        Statement statement = conn.createStatement();
+        String sql = "SELECT * FROM Notes where bibleId = " + bibleId + " AND bookId = " + bookId +
+                " AND chapterId = " + chapterId + " ORDER BY verseId;";
+
+        Vector<Notes> notes = new Vector<>();
+
+        ResultSet resultSet = statement.executeQuery(sql);
+
+        while (resultSet.next()) {
+            Notes note = new Notes();
+
+            note.setNoteId(resultSet.getLong("noteId"));
+            note.setBibleId(resultSet.getLong("bibleId"));
+            note.setBookId(resultSet.getLong("bookId"));
+            note.setChapterId(resultSet.getLong("chapterId"));
+            note.setVerseId(resultSet.getLong("verseId"));
+            note.setNoteText(resultSet.getString("noteText"));
+
+            notes.add(note);
+        }
+
+        return notes;
+    }
+
+    public int writeToNotes(Notes notes) throws Exception {
+        Statement statement = conn.createStatement();
+        String sql = "INSERT INTO Notes (noteId, bibleId, bookId, chapterId, verseId, noteText)" +
+                " VALUES (" + notes.getNoteId() + ", " + notes.getBibleId() + ", " + notes.getBookId() + ", " +
+                notes.getChapterId() + ", " + notes.getVerseId() + ", '" + notes.getNoteText() + "');";
+
+        statement.execute(sql);
+
+        return 0;
+    }
+
+    public int updateNotes(Notes notes) throws Exception {
+        Statement statement = conn.createStatement();
+        String sql = "UPDATE Notes SET bibleId = " + notes.getBibleId() + ", bookId = " + notes.getBookId() +
+                ", chapterId = " + notes.getChapterId() + ", verseId = " + notes.getVerseId() +
+                ", noteText = '" + notes.getNoteText() + "' WHERE NoteId = " + notes.getNoteId() + ";";
+
+        statement.execute(sql);
+
+        return 0;
+    }
+
+    public void deleteNotes(Long noteId) throws Exception {
+        Statement statement = conn.createStatement();
+        String sql = "DELETE FROM Notes WHERE noteId = " + noteId + ";";
+
+        statement.execute(sql);
     }
 }
