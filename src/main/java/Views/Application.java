@@ -1,5 +1,6 @@
 package main.java.Views;
 import main.java.Data.Bible;
+import main.java.Data.BibleName;
 import main.java.Service.DatabaseConnection;
 import main.java.Service.ProcessJSON;
 import main.java.Service.ProgramDirectoryService;
@@ -292,35 +293,60 @@ public class Application extends JFrame {
     private void importDialog() {
         JDialog jDialog = new JDialog(this, "Import Bible");
         jDialog.setLayout(new BorderLayout());
-        jDialog.setSize(400, 100);
-        jDialog.setLocation((this.getWidth() / 2) + this.getX() - 200, (this.getHeight() / 2) + this.getY() - 50);
+        jDialog.setSize(400, 150);
+        jDialog.setResizable(false);
+        jDialog.setLocation((this.getWidth() / 2) + this.getX() - 200, (this.getHeight() / 2) + this.getY() - 75);
         createSelectFilePane(jDialog);
         jDialog.setVisible(true);
     }
 
     private void createSelectFilePane(JDialog dialog) {
         JButton uploadButton = new JButton("Upload");
-        // File Chooser pop-up
-        JFileChooser fileChooser = new JFileChooser();
-        fileChooser.setFileFilter(new FileNameExtensionFilter("json", "json"));
-        fileChooser.setCurrentDirectory(new File(System.getProperty("user.home") +
-                System.getProperty("file.separator") + "BibleApp"));
 
-        // Panel for selection of file
-        JPanel fileSelectPanel = new JPanel();
-        JButton button = new JButton("Select File");
-        JLabel label = new JLabel();
-        label.setText("No file is selected");
-        button.addActionListener(event -> {
-            int result = fileChooser.showDialog(this, "Select");
-            if (result == JFileChooser.APPROVE_OPTION) {
-                selectedFile = fileChooser.getSelectedFile();
-                label.setText(selectedFile.getName());
+        // Selection Arrays
+        String language[] = {"English"};
+        Vector<String> installedBibles = new Vector<>();
+        for (Bible bible : bibles) {
+            installedBibles.add(bible.getBibleName());
+        }
+        Vector<BibleName> bibleNames = new Vector<>();
+        for (BibleName bibleName : BibleName.values()) {
+            if (bibleName == BibleName.PLACEHOLDER) {
+                bibleNames.add(bibleName);
+            } else if (!installedBibles.contains(bibleName.toString())) {
+                bibleNames.add(bibleName);
+            }
+        }
+
+        // Language and Bible Drop-Downs
+        JPanel selectionPanel = new JPanel(new BorderLayout());
+        JPanel langPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        JPanel biblePanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        JLabel langLabel = new JLabel("Language");
+        JLabel bibleLabel = new JLabel("Bible");
+        JComboBox<String> langBox = new JComboBox<>();
+        for (String lang : language) {
+            langBox.addItem(lang);
+        }
+        JComboBox<BibleName> bibleBox = new JComboBox<>();
+        for (BibleName bible : bibleNames) {
+            bibleBox.addItem(bible);
+        }
+        bibleBox.addActionListener(event -> {
+            if (bibleBox.getSelectedItem() == BibleName.PLACEHOLDER) {
+                uploadButton.setEnabled(false);
+            } else {
+                selectedFile = new File(path + "/Resources/Bibles/" + bibleNames.get(bibleBox.getSelectedIndex()).toFileName());
                 uploadButton.setEnabled(true);
             }
         });
-        fileSelectPanel.add(button);
-        fileSelectPanel.add(label);
+
+        langPanel.add(langLabel);
+        langPanel.add(langBox);
+        biblePanel.add(bibleLabel);
+        biblePanel.add(bibleBox);
+        selectionPanel.add(langPanel, BorderLayout.NORTH);
+        selectionPanel.add(biblePanel, BorderLayout.SOUTH);
 
         // panel for Buttons
         JPanel buttonPanel = new JPanel();
@@ -344,7 +370,7 @@ public class Application extends JFrame {
         buttonPanel.add(cancelButton, BorderLayout.WEST);
         buttonPanel.add(uploadButton, BorderLayout.EAST);
 
-        dialog.getContentPane().add(fileSelectPanel, BorderLayout.NORTH);
+        dialog.getContentPane().add(selectionPanel, BorderLayout.NORTH);
         dialog.getContentPane().add(buttonPanel, BorderLayout.SOUTH);
     }
 
