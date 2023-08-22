@@ -164,6 +164,9 @@ public class ProcessJSON {
         JSONObject jsonObject = (JSONObject) obj;
         Long screenWidth = (Long) jsonObject.get("screenWidth");
         jsonObject.clear();
+        if (screenWidth == null) {
+            screenWidth = 1024L;
+        }
         return screenWidth.intValue();
     }
 
@@ -174,6 +177,9 @@ public class ProcessJSON {
         JSONObject jsonObject = (JSONObject) obj;
         Long screenHeight = (Long) jsonObject.get("screenHeight");
         jsonObject.clear();
+        if (screenHeight == null) {
+            screenHeight = 768L;
+        }
         return screenHeight.intValue();
     }
 
