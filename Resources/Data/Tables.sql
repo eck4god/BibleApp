@@ -40,7 +40,10 @@ CREATE TABLE IF NOT EXISTS Indexes (
 	chapterId BIGINT,
 	verseId BIGINT,
 	bibleLinkId BIGINT,
-	noteId BIGINT
+	noteId BIGINT,
+	wordId BIGINT,
+	referenceId BIGINT,
+	materialsId BIGINT
 ) WITHOUT ROWID;
 
 CREATE TABLE IF NOT EXISTS Notes (
@@ -50,4 +53,25 @@ CREATE TABLE IF NOT EXISTS Notes (
     chapterId BIGINT,
     verseId BIGINT,
     noteText VARCHAR(2000000)
+) WITHOUT ROWID;
+
+CREATE TABLE IF NOT EXISTS Words (
+    wordId BIGINT PRIMARY KEY,
+    word VARCHAR(100)
+) WITHOUT ROWID;
+
+CREATE TABLE IF NOT EXISTS Reference (
+    referenceId BIGINT PRIMARY KEY,
+    citation VARCHAR(15),
+    text VARCHAR(255),
+    link VARCHAR(10),
+    bookId BIGINT,
+    chapterId BIGINT,
+    verseNumber BIGINT,
+    wordId BIGINT
+) WITHOUT ROWID;
+
+CREATE TABLE IF NOT EXISTS Materials (
+    materialsId BIGINT PRIMARY KEY,
+    name VARCHAR(50)
 ) WITHOUT ROWID;

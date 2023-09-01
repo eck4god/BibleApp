@@ -108,6 +108,9 @@ public class DatabaseConnection {
         indexes.setVerseId(resultSet.getLong("verseId"));
         indexes.setBibleLinkId(resultSet.getLong("bibleLinkId"));
         indexes.setNotesId(resultSet.getLong("noteId"));
+        indexes.setWordId(resultSet.getLong("wordId"));
+        indexes.setReferenceId(resultSet.getLong("referenceId"));
+        indexes.setMaterialsId(resultSet.getLong("materialsId"));
 
         return indexes;
     }
@@ -120,6 +123,9 @@ public class DatabaseConnection {
                 ", verseId = " + indexes.getVerseId() +
                 ", bibleLinkId = " + indexes.getBibleLinkId() +
                 ", noteId = " + indexes.getNotesId() +
+                ", wordId = " + indexes.getWordId() +
+                ", referenceId = " + indexes.getReferenceId() +
+                ", materialsId = " + indexes.getMaterialsId() +
                 " Where indexId = " + indexes.getIndexId() + ";";
 
         statement.execute(sql);
@@ -325,5 +331,131 @@ public class DatabaseConnection {
         String sql = "DELETE FROM Notes WHERE noteId = " + noteId + ";";
 
         statement.execute(sql);
+    }
+
+    public void writeToWords(Word word) throws Exception {
+        Statement statement = conn.createStatement();
+        String sql = "INSERT INTO Words (wordId, word) VALUES (" +
+                word.getWordId() + ", '" + word.getWord() + "');";
+
+        statement.execute(sql);
+    }
+
+    public void writeToReference(Reference reference) throws Exception {
+        Statement statement = conn.createStatement();
+        String sql = "INSERT INTO Reference (referenceId, citation, text, link, bookId, chapterId, verseNumber, wordId)" +
+                " VALUES (" + reference.getReferenceId() +
+                ", '" + reference.getCitation() +
+                "', '" + reference.getText() +
+                "', '" + reference.getLink() +
+                "', " + reference.getBookId() +
+                ", " + reference.getChapterId() +
+                ", " + reference.getVerseNum() +
+                ", " + reference.getWordId() +
+                ");";
+
+        statement.execute(sql);
+    }
+
+    public Vector<Word> getWordByString(String search) throws Exception {
+        Statement statement = conn.createStatement();
+        String sql = "SELECT * FROM Words WHERE word LIKE '" + search + "%';";
+
+        Vector<Word> words = new Vector<>();
+
+        ResultSet resultSet = statement.executeQuery(sql);
+
+        while (resultSet.next()) {
+            Word word = new Word();
+
+            word.setWordId(resultSet.getLong("wordId"));
+            word.setWord(resultSet.getString("word"));
+            words.add(word);
+        }
+
+        return words;
+    }
+
+    public int getTotalCountOfPagedWordByString(String search) throws Exception {
+        Statement statement = conn.createStatement();
+        String sql = "SELECT COUNT(*) AS count FROM Words WHERE word LIKE '" + search + "%';";
+
+        ResultSet resultSet = statement.executeQuery(sql);
+
+        int count = 0;
+        while (resultSet.next()) {
+            count = resultSet.getInt("count");
+        }
+
+        return count;
+    }
+
+    public Vector<Word> getPagedWordByString(String search, int startIndex, int batchSize) throws Exception {
+        Statement statement = conn.createStatement();
+        String sql = "SELECT * FROM Words WHERE word LIKE '" + search + "%' LIMIT " +
+                batchSize + " OFFSET " + startIndex + ";";
+
+        Vector<Word> words = new Vector<>();
+
+        ResultSet resultSet = statement.executeQuery(sql);
+
+        while (resultSet.next()) {
+            Word word = new Word();
+
+            word.setWordId(resultSet.getLong("wordId"));
+            word.setWord(resultSet.getString("word"));
+            words.add(word);
+        }
+
+        return words;
+    }
+
+    public Vector<Reference> getReferenceByWordId(Long wordId) throws Exception {
+        Statement statement = conn.createStatement();
+        String sql = "SELECT * FROM Reference WHERE wordId = " + wordId + ";";
+
+        Vector<Reference> references = new Vector<>();
+
+        ResultSet resultSet = statement.executeQuery(sql);
+
+        while (resultSet.next()) {
+            Reference reference = new Reference();
+            reference.setReferenceId(resultSet.getLong("referenceId"));
+            reference.setWordId(resultSet.getLong("wordId"));
+            reference.setCitation(resultSet.getString("citation"));
+            reference.setText(resultSet.getString("text"));
+            reference.setLink(resultSet.getString("link"));
+            reference.setBookId(resultSet.getLong("bookId"));
+            reference.setChapterId(resultSet.getLong("chapterId"));
+            reference.setVerseNum(resultSet.getLong("verseNumber"));
+            references.add(reference);
+        }
+
+        return references;
+    }
+
+    public void writeToMaterials(Materials materials) throws Exception {
+        Statement statement = conn.createStatement();
+        String sql = "INSERT INTO Materials (materialsId, name) VALUES (" +
+                materials.getMaterialsId() +
+                ", '" + materials.getName() + "');";
+
+        statement.execute(sql);
+    }
+
+    public Vector<Materials> getMaterials() throws Exception {
+        Statement statement = conn.createStatement();
+        String sql = "SELECT * FROM Materials";
+
+        ResultSet resultSet = statement.executeQuery(sql);
+        Vector<Materials> materials = new Vector<>();
+        while (resultSet.next()) {
+            Materials material = new Materials();
+            material.setMaterialsId(resultSet.getLong("materialsId"));
+            material.setName(resultSet.getString("name"));
+            materials.add(material);
+        }
+
+        return materials;
     }
 }

@@ -21,6 +21,7 @@ public class NavigationPane extends JPanel {
         this.parentFrame = parentFrame;
         this.setLayout(new BorderLayout());
         this.setPreferredSize(new Dimension(200, 600));
+        this.setMinimumSize(new Dimension(200,600));
         this.setBorder(new EmptyBorder(10,10,10,10));
         getBooks();
         createNavigationScrollPane();

@@ -1,12 +1,13 @@
 package main.java.Views;
 import main.java.Data.Bible;
 import main.java.Data.BibleName;
+import main.java.Data.Materials;
+import main.java.Data.References;
 import main.java.Service.DatabaseConnection;
 import main.java.Service.ProcessJSON;
 import main.java.Service.ProgramDirectoryService;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
-import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.*;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
@@ -25,12 +26,14 @@ public class Application extends JFrame {
     private Integer textSize;
     private File selectedFile;
     private Vector<Bible> bibles;
+    private Vector<Materials> materials;
     private JSplitPane splitPane;
     private JSplitPane verticalSplitPane;
     private JTabbedPane tabbedPane;
-    private JTabbedPane notesPane;
+    private JTabbedPane referencePane;
     private JPanel emptyPanel;
     private NotesPanel notesPanel;
+    private ConcordancePanel concordancePanel;
     private boolean isVisible = true;
 
     public Application() {
@@ -67,13 +70,14 @@ public class Application extends JFrame {
         this.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         this.setLayout(layout);
         getBibles();
+        getMaterials();
         menuBar();
         toolbar();
         NavigationPane navigationPane = new NavigationPane(this);
         navigationPane.setVisible(true);
         createReaderTabbedPane();
-        createNotesTabbedPane();
-        verticalSplitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, tabbedPane, notesPane);
+        createReferenceTabbedPane();
+        verticalSplitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, tabbedPane, referencePane);
         verticalSplitPane.setResizeWeight(0.75);
         splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, navigationPane, verticalSplitPane);
         if (!isVisible)
@@ -109,7 +113,10 @@ public class Application extends JFrame {
         JMenu file = new JMenu("File");
         JMenuItem importBible = new JMenuItem("Import Bible...");
         importBible.addActionListener(e -> importDialog());
+        JMenuItem addConcordance = new JMenuItem("Add Reference...");
+        addConcordance.addActionListener(e -> importConcordanceDialog());
         file.add(importBible);
+        file.add(addConcordance);
 
 
         if (!System.getProperty("os.name").equals("Mac OS X")) {
@@ -272,18 +279,28 @@ public class Application extends JFrame {
         splitPane.add(emptyPanel);
     }
 
-    private void createNotesTabbedPane() {
+    private void createReferenceTabbedPane() {
 
-        notesPane = new JTabbedPane();
+        referencePane = new JTabbedPane();
         createNotesTab();
-
+        for (Materials material : materials) {
+            if (material.getName().equals(References.Strongs.toString())) {
+                createConcordanceTab();
+            }
+        }
     }
 
     private void createNotesTab() {
         ReaderPanel readerPanel = (ReaderPanel) tabbedPane.getSelectedComponent();
         notesPanel = new NotesPanel(this, textSize, readerPanel.getBible(), readerPanel.getBook(), readerPanel.getChapter());
 
-        notesPane.addTab("Notes", notesPanel);
+        referencePane.addTab("Notes", notesPanel);
+    }
+
+    private void createConcordanceTab() {
+        concordancePanel = new ConcordancePanel(this, textSize);
+
+        referencePane.addTab("Concordance", concordancePanel);
     }
 
     public void updateNotes(Long bibleId, Long bookId, Long chapterId) {
@@ -404,6 +421,7 @@ public class Application extends JFrame {
     public void setTextSize(int textSize) {
         this.textSize = textSize;
         notesPanel.setTextSize(textSize);
+        concordancePanel.setTextSize(textSize);
     }
 
     public void getBibles() {
@@ -413,6 +431,16 @@ public class Application extends JFrame {
             connection.close();
         } catch (Exception e) {
             JOptionPane.showMessageDialog(this, "Error connecting to database", "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    public void getMaterials() {
+        try {
+            DatabaseConnection databaseConnection = new DatabaseConnection();
+            materials = databaseConnection.getMaterials();
+            databaseConnection.close();
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 
@@ -478,6 +506,80 @@ public class Application extends JFrame {
         panel.add(dropDownPanel, BorderLayout.CENTER);
         panel.add(buttonPanel, BorderLayout.SOUTH);
         dialog.add(panel);
+        dialog.setVisible(true);
+    }
+
+    private void importConcordanceDialog() {
+        JDialog dialog = new JDialog(this, "Add Reference Materials");
+        dialog.setLayout(new BorderLayout());
+        dialog.setSize(new Dimension(400 , 150));
+        dialog.setResizable(false);
+        dialog.setLocation((this.getWidth() / 2) + this.getX() - 200, (this.getHeight() / 2) + this.getY() - 75);
+
+        JPanel panel = new JPanel();
+        panel.setLayout(new BorderLayout());
+
+        JPanel layout = new JPanel();
+        layout.setLayout(new FlowLayout(FlowLayout.CENTER));
+
+        JPanel labelLayout = new JPanel();
+        labelLayout.setLayout(new FlowLayout(FlowLayout.CENTER));
+
+        JLabel label = new JLabel("Available Reference Materials");
+
+        JButton submitButton = new JButton("Submit");
+        submitButton.setEnabled(false);
+
+        Vector<References> references = new Vector<>();
+        for (References r : References.values()) {
+            references.add(r);
+        }
+        JComboBox<References> comboBox = new JComboBox<>();
+        for (References concordances : references) {
+            comboBox.addItem(concordances);
+        }
+        comboBox.addActionListener(event -> {
+            if (comboBox.getSelectedItem().equals(References.Placeholder)) {
+                submitButton.setEnabled(false);
+            } else {
+                submitButton.setEnabled(true);
+            }
+        });
+        labelLayout.add(label);
+        layout.add(comboBox);
+        panel.add(labelLayout, BorderLayout.NORTH);
+        panel.add(layout, BorderLayout.CENTER);
+
+        JPanel buttonPanel = new JPanel();
+        buttonPanel.setLayout(new BorderLayout());
+        buttonPanel.setBorder(new EmptyBorder(10,10,10,10));
+
+        JButton cancelButton = new JButton("Cancel");
+        cancelButton.addActionListener(e -> {
+            dialog.setVisible(false);
+            dialog.dispose();
+        });
+
+        submitButton.setBackground(Color.BLUE);
+        submitButton.setForeground(Color.WHITE);
+        submitButton.addActionListener(event -> {
+            ProcessJSON processJSON = new ProcessJSON(references.get(comboBox.getSelectedIndex()).toFiles());
+            try {
+                dialog.setVisible(false);
+                dialog.dispose();
+                processJSON.addConcordance(this, comboBox.getSelectedItem().toString());
+            } catch (Exception e) {
+                e.printStackTrace();
+                JOptionPane.showMessageDialog(this,"Error loading files", "Error", JOptionPane.ERROR_MESSAGE);
+            }
+            createConcordanceTab();
+        });
+
+        buttonPanel.add(cancelButton, BorderLayout.WEST);
+        buttonPanel.add(submitButton, BorderLayout.EAST);
+
+        dialog.add(panel, BorderLayout.NORTH);
+        dialog.add(buttonPanel, BorderLayout.SOUTH);
         dialog.setVisible(true);
     }
 

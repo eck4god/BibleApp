@@ -8,6 +8,9 @@ public class Indexes {
     private Long verseId;
     private Long bibleLinkId;
     private Long notesId;
+    private Long wordId;
+    private Long referenceId;
+    private Long materialsId;
 
     public Long getIndexId() {
         return indexId;
@@ -57,11 +60,18 @@ public class Indexes {
         this.bibleLinkId = bibleLinkId;
     }
 
-    public Long getNotesId() {
-        return notesId;
-    }
+    public Long getNotesId() { return notesId; }
 
-    public void setNotesId(Long notesId) {
-        this.notesId = notesId;
-    }
+    public void setNotesId(Long notesId) { this.notesId = notesId; }
+
+    public Long getWordId() { return wordId; }
+
+    public void setWordId(Long wordId) { this.wordId = wordId; }
+
+    public Long getReferenceId() { return referenceId; }
+
+    public void setReferenceId(Long referenceId) { this.referenceId = referenceId; }
+
+    public Long getMaterialsId() { return materialsId; }
+    public void setMaterialsId(Long materialsId) { this.materialsId = materialsId; }
 }
