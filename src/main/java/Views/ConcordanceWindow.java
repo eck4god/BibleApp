@@ -7,12 +7,15 @@ import main.java.Service.ProgramDirectoryService;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
+import javax.swing.text.BadLocationException;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeCellRenderer;
 import javax.swing.tree.TreePath;
 import java.awt.*;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Vector;
+import java.util.stream.Collectors;
 
 public class ConcordanceWindow extends JFrame {
 
@@ -69,11 +72,39 @@ public class ConcordanceWindow extends JFrame {
         // Make Search Box
         JPanel searchPanel = new JPanel();
         searchPanel.setLayout(new FlowLayout(FlowLayout.RIGHT));
-        JTextField search = new JTextField(8);
-        search.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 18));
+        JTextField searchField = new JTextField(8);
+        searchField.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 18));
         JButton searchButton = new JButton("Search");
+        searchButton.addActionListener(event -> {
+            if (searchField.getText().length() > 1) {
+                search = searchField.getText();
+                startIndex = 0;
+                getWords(search);
+                if (words.isEmpty() || words.size() < 11) {
+                    nextButton.setEnabled(false);
+                }
+                textPane.setDocument(htmlDocument.updatePage(words));
+                pane.getVerticalScrollBar().setValue(0);
+            }
+        });
         JButton clearButton = new JButton("Clear");
-        searchPanel.add(search);
+        clearButton.addActionListener(event -> {
+            if (search.length() > 1) {
+                startIndex = 0;
+                search = createLetters().get(0);
+                getWords(search);
+                textPane.setDocument(htmlDocument.updatePage(words));
+                pane.getVerticalScrollBar().setValue(0);
+                searchField.setText("");
+                searchField.validate();
+                searchField.repaint();
+            } else {
+                searchField.setText("");
+                searchField.validate();
+                searchField.repaint();
+            }
+        });
+        searchPanel.add(searchField);
         searchPanel.add(searchButton);
         searchPanel.add(clearButton);
 
@@ -84,10 +115,12 @@ public class ConcordanceWindow extends JFrame {
 
     private JToolBar addFooterBar() {
         JToolBar toolBar = new JToolBar();
-        toolBar.setLayout(new FlowLayout(FlowLayout.CENTER));
+        toolBar.setLayout(new BorderLayout());
         toolBar.setRollover(true);
         toolBar.setFloatable(false);
 
+        JPanel nevButton = new JPanel();
+        nevButton.setLayout(new FlowLayout(FlowLayout.CENTER));
         nextButton = new JButton();
         prevButton = new JButton();
         prevButton.setIcon(new ImageIcon(path + "/Resources/Icons/leftArrow.png"));
@@ -124,7 +157,9 @@ public class ConcordanceWindow extends JFrame {
         nextButton.setToolTipText("Next Page");
         nextButton.addActionListener(event -> {
             if (startIndex + batchSize > totalCount) {
-                if (createLetters().contains(search)) {
+                if (search.length() > 1) {
+                    nextButton.setEnabled(false);
+                } else if (createLetters().contains(search)) {
                     // If Search is done by letter
                     startIndex = 0;
                     if (search.equals(createLetters().get(createLetters().size() - 1))) {
@@ -144,8 +179,31 @@ public class ConcordanceWindow extends JFrame {
             prevButton.setEnabled(true);
         });
 
-        toolBar.add(prevButton);
-        toolBar.add(nextButton);
+        nevButton.add(prevButton);
+        nevButton.add(nextButton);
+        toolBar.add(nevButton, BorderLayout.CENTER);
+
+        // Size Buttons
+        JPanel sizeButtons = new JPanel();
+        sizeButtons.setLayout(new FlowLayout(FlowLayout.RIGHT));
+        JButton larger = new JButton();
+        larger.addActionListener(event -> {
+            textSize += 2;
+            textPane.setDocument(htmlDocument.setTextSize(textSize));
+        });
+        larger.setIcon(new ImageIcon(path + "/Resources/Icons/plus.png"));
+        larger.setPreferredSize(new Dimension(25,25));
+        JButton smaller = new JButton();
+        smaller.setIcon(new ImageIcon(path + "/Resources/Icons/minus.png"));
+        smaller.setPreferredSize(new Dimension(25,25));
+        smaller.addActionListener(event -> {
+            textSize -= 2;
+            textPane.setDocument(htmlDocument.setTextSize(textSize));
+        });
+
+        sizeButtons.add(smaller);
+        sizeButtons.add(larger);
+        toolBar.add(sizeButtons, BorderLayout.EAST);
 
         return toolBar;
     }
@@ -213,6 +271,35 @@ public class ConcordanceWindow extends JFrame {
                 }
 
                 return this;
+            }
+        });
+        tree.getSelectionModel().addTreeSelectionListener(event -> {
+            TreePath path = event.getPath();
+            if (path.getPathCount() == 2) {
+                if (tree.isCollapsed(path)) {
+                    tree.expandPath(path);
+                } else {
+                    tree.collapsePath(path);
+                }
+            } else if (path.getPathCount() == 3) {
+                DefaultMutableTreeNode node = (DefaultMutableTreeNode) path.getLastPathComponent();
+                DefaultMutableTreeNode parentNode = (DefaultMutableTreeNode) path.getPathComponent(1);
+                Word word = (Word) node.getUserObject();
+
+                // Get Location of node and the start index
+                int nodeIndex = parentNode.getIndex(node);
+                startIndex = (int) Math.floor(nodeIndex / 10.0) * 10;
+                search = parentNode.getUserObject().toString();
+                getWords(search);
+                textPane.setDocument(htmlDocument.updatePage(words));
+
+                try {
+                    String text = textPane.getDocument().getText(0, textPane.getDocument().getLength());
+                    textPane.setCaretPosition(text.indexOf(word.getWord()));
+                } catch (BadLocationException e) {
+                    e.printStackTrace();
+                }
+                nextButton.setEnabled(true);
             }
         });
 

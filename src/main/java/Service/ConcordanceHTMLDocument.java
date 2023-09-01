@@ -54,7 +54,7 @@ public class ConcordanceHTMLDocument extends HTMLDocument {
         String HTML2 = "</body></HTML>";
 
         for (Word word : words) {
-            text = text.concat("<H2 style=\"color: #0000cc; margin-left: 20px; font-size:" +
+            text = text.concat("<H2 id='" + word.getWordId() + "' style=\"color: #0000cc; margin-left: 20px; font-size:" +
                     textSize + "px\">" + word.getWord() + "</H2><br>");
 
             Vector<Reference> references = new Vector<>();
