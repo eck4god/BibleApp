@@ -28,7 +28,7 @@ public class NotesHTMLDocument extends HTMLDocument {
         HTMLEditorKit htmlEditorKit = new HTMLEditorKit();
         StyleSheet ss = htmlEditorKit.getStyleSheet();
         ss.addRule("body {font-size: " + textSize + "px}");
-        ss.addRule("table, th, td {border: 1px solid black; text-align: center}");
+        ss.addRule(".noteTable, th, .tableData {border: 1px solid black; text-align: center}");
         HTMLDocument htmlDocument = (HTMLDocument) htmlEditorKit.createDefaultDocument();
 
         try {
@@ -59,15 +59,15 @@ public class NotesHTMLDocument extends HTMLDocument {
                 // Creates Chapter Notes Header and Grid
                 text = text.concat("<H2 style = \"text-align : center ; font-size : " + textSize + "px\">Notes For " + chapter.getDisplayName() + "</H2>");
 
-                text = text.concat("<Table><tr><th>Note</th><th>Edit</th><th>Delete</th></tr>");
+                text = text.concat("<Table class=\"noteTable\"><tr><th>Note</th><th>Edit</th><th>Delete</th></tr>");
 
                 for (Notes note : notes) {
                     if (note.getVerseId() == 0L && note.getChapterId() == chapter.getChapterId()) {
-                        text = text.concat("<tr><td>");
+                        text = text.concat("<tr class=\"tableRow\"><td class=\"tableData\">");
                         text = text.concat(note.getNoteText());
-                        text = text.concat("</td><td><a href =\"Edit-" +
+                        text = text.concat("</td><td class=\"tableData\"><a href =\"Edit-" +
                                 note.getNoteId() + "\"><img class=\"edit\" src=\"file:///" + path + "/Resources/Icons/edit.png\" border=\"0\"/></a></td>");
-                        text = text.concat("<td><a href =\"Delete-" +
+                        text = text.concat("<td class=\"tableData\"><a href =\"Delete-" +
                                 note.getNoteId() + "\"><img class=\"delete\" src=\"file:///" + path + "/Resources/Icons/delete.png\" border=\"0\"/></a></td></tr>");
                     }
                 }
@@ -76,15 +76,15 @@ public class NotesHTMLDocument extends HTMLDocument {
 
                 // Creates Notes Associated with a verse header and grid
                 text = text.concat("<H2 style = \"text-align : center ; font-size : " + textSize + "px\">Notes For Verses in " + chapter.getDisplayName() + "</H2>");
-                text = text.concat("<Table><tr><th>Verse</th><th>Note</th><th>Edit</th><th>Delete</th></tr>");
+                text = text.concat("<Table class=\"noteTable\"><tr class=\"tableRow\"><th>Verse</th><th>Note</th><th>Edit</th><th>Delete</th></tr>");
 
                 for (Notes note : notes) {
                     if (note.getVerseId() != 0L && note.getChapterId() == chapter.getChapterId()) {
-                        text = text.concat("<tr>");
-                        text = text.concat("<td>" + note.getVerseId() + "</td><td>" + note.getNoteText() + "</td>");
-                        text = text.concat("</td><td><a href=\"Edit-" +
+                        text = text.concat("<tr class=\"tableRow\">");
+                        text = text.concat("<td class=\"tableData\">" + note.getVerseId() + "</td><td class=\"tableData\">" + note.getNoteText() + "</td>");
+                        text = text.concat("</td><td class=\"tableData\"><a href=\"Edit-" +
                                 note.getNoteId() + "\"><img class=\"edit\" src=\"file:///" + path + "/Resources/Icons/edit.png\" border=\"0\"/></a></td>");
-                        text = text.concat("<td><a href=\"Delete-" +
+                        text = text.concat("<td class=\"tableData\"><a href=\"Delete-" +
                                 note.getNoteId() + "\"><img class=\"delete\" src=\"file:///" + path + "/Resources/Icons/delete.png\" border=\"0\"/></a></td></tr>");
                     }
                 }

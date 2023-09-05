@@ -8,17 +8,20 @@ import java.util.ArrayList;
 import java.util.List;
 
 import main.java.Data.Indexes;
-import main.java.Data.Verse;
+import main.java.Data.Materials;
+import main.java.Data.Reference;
+import main.java.Data.Word;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 
 import javax.swing.*;
+import javax.swing.border.EmptyBorder;
 
 public class ProcessJSON {
 
-    JFrame parentFrame;
     File file;
+    ArrayList<File> files;
 
     public ProcessJSON() {
 
@@ -27,6 +30,8 @@ public class ProcessJSON {
     public ProcessJSON(File file) {
         this.file = file;
     }
+
+    public ProcessJSON(ArrayList<File> files) { this.files = files; }
 
     public boolean isFirstRun() throws Exception {
         JSONParser parser = new JSONParser();
@@ -155,6 +160,139 @@ public class ProcessJSON {
 
         worker.execute();
         jDialog.setVisible(true);
+        return 0;
+    }
+
+    public int addConcordance(JFrame parentFrame, String label) throws Exception {
+        // Dialog box for progress bar
+        JDialog dialog = new JDialog(parentFrame, "Adding " + label, Dialog.ModalityType.APPLICATION_MODAL);
+        dialog.setLayout(new BorderLayout());
+        dialog.setSize(new Dimension(400, 200));
+        dialog.setLocation((parentFrame.getWidth() / 2) + parentFrame.getX() - 200, (parentFrame.getHeight() / 2) + parentFrame.getY() / 100);
+
+        // Label and progress bars
+        JPanel filePanel = new JPanel();
+        filePanel.setLayout(new BorderLayout());
+        JLabel fileLabel = new JLabel("...");
+        fileLabel.setFont(new Font(Font.DIALOG, Font.BOLD, 18));
+        fileLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        JProgressBar fileProgress = new JProgressBar();
+        fileProgress.setAlignmentX(Component.CENTER_ALIGNMENT);
+        fileProgress.setVisible(true);
+        fileProgress.setStringPainted(true);
+        fileProgress.setValue(0);
+        filePanel.add(fileLabel, BorderLayout.NORTH);
+        filePanel.add(fileProgress, BorderLayout.SOUTH);
+
+        JPanel overallPanel = new JPanel();
+        overallPanel.setLayout(new BorderLayout());
+        JLabel overallLabel = new JLabel("Overall Progress");
+        overallLabel.setFont(new Font(Font.DIALOG, Font.BOLD, 18));
+        overallLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        JProgressBar overallProgress = new JProgressBar();
+        overallProgress.setAlignmentX(Component.CENTER_ALIGNMENT);
+        overallProgress.setVisible(true);
+        overallProgress.setStringPainted(true);
+        overallProgress.setValue(0);
+        overallPanel.add(overallLabel, BorderLayout.NORTH);
+        overallPanel.add(overallProgress, BorderLayout.SOUTH);
+
+        JPanel layout = new JPanel();
+        layout.setLayout(new BorderLayout());
+        layout.setBorder(new EmptyBorder(10,10,10,10));
+        layout.add(filePanel, BorderLayout.NORTH);
+        layout.add(overallPanel, BorderLayout.SOUTH);
+
+        dialog.add(layout, BorderLayout.CENTER);
+
+        overallProgress.setMaximum(files.size());
+
+        DatabaseConnection databaseConnection = new DatabaseConnection();
+        Indexes indexes = databaseConnection.getIndex();
+        Materials materials = new Materials();
+        materials.setMaterialsId(indexes.getMaterialsId() + 1);
+        materials.setName(label);
+        indexes.setMaterialsId(indexes.getMaterialsId() + 1);
+        databaseConnection.writeToMaterials(materials);
+
+        SwingWorker<Void, Progress> worker = new SwingWorker<>() {
+            @Override
+            protected Void doInBackground() throws Exception {
+
+                for (int n = 0; n < files.size(); n ++) {
+                    File f = files.get(n);
+                    JSONParser parser = new JSONParser();
+                    Object obj = parser.parse(new FileReader(f));
+                    JSONObject jsonObject = (JSONObject) obj;
+                    JSONArray words = (JSONArray) jsonObject.get("words");
+
+                    for (int i = 0; i < words.size(); i++) {
+                        JSONObject word = (JSONObject) words.get(i);
+
+                        Word w = new Word();
+                        w.setWordId(indexes.getWordId() + 1);
+                        w.setWord(word.get("Word").toString());
+                        indexes.setWordId(indexes.getWordId() + 1);
+                        publish(new Progress(w.getWord(), n, i, files.size(), words.size()));
+
+                        databaseConnection.writeToWords(w);
+
+                        JSONArray references = (JSONArray) word.get("reference");
+
+                        for (int j = 0; j < references.size(); j++) {
+                            JSONObject reference = (JSONObject) references.get(j);
+                            Reference r = new Reference();
+                            r.setReferenceId(indexes.getReferenceId() + 1);
+                            r.setWordId(w.getWordId());
+                            r.setCitation(reference.get("ref").toString());
+                            if ((Long) reference.get("Book") != null) {
+                                r.setText(reference.get("text").toString());
+                                if (reference.get("link") != null) {
+                                    r.setLink(reference.get("link").toString());
+                                }
+                                r.setBookId((Long) reference.get("Book"));
+                                r.setChapterId(Long.parseLong(reference.get("Chapter").toString()));
+                                r.setVerseNum(Long.parseLong(reference.get("Verse").toString()));
+                            }
+                            indexes.setReferenceId(indexes.getReferenceId() + 1);
+
+                            databaseConnection.writeToReference(r);
+                            reference.clear();
+                        }
+                        word.clear();
+                    }
+                    words.clear();
+                }
+
+                return null;
+            }
+
+            @Override
+            protected void process(List<Progress> chunks) {
+                Progress chunk = chunks.get(chunks.size() - 1);
+                overallProgress.setMaximum(chunk.getMaxFile());
+                fileProgress.setMaximum(chunk.getMaxWord());
+                fileLabel.setText(chunk.getLabel());
+                overallProgress.setValue(chunk.getOverallProgress());
+                fileProgress.setValue(chunk.getInnerProgress());
+            }
+
+            @Override
+            protected void done() {
+
+                try {
+                    get();
+                    databaseConnection.writeIndexes(indexes);
+                    databaseConnection.close();
+                    dialog.setVisible(false);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        };
+
+        worker.execute();
+        dialog.setVisible(true);
         return 0;
     }
 
@@ -315,5 +453,9 @@ public class ProcessJSON {
         Integer textSize = temp.intValue();
         jsonObject.clear();
         return textSize;
+    }
+
+    private Class Progress(String label, int overall, int inner) {
+        return Progress(label, overall, inner);
     }
 }

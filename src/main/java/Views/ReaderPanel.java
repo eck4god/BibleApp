@@ -4,6 +4,8 @@ import main.java.Data.BibleLink;
 import main.java.Service.DatabaseConnection;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
+import javax.swing.text.DefaultHighlighter;
+import javax.swing.text.Highlighter;
 import javax.swing.text.html.HTMLDocument;
 import javax.swing.text.html.HTMLEditorKit;
 import java.awt.*;
@@ -62,6 +64,30 @@ public class ReaderPanel extends JPanel {
         textArea.setDocument(createHTMLDocument());
         footerToolBar.updateBookAndChapter(bookId, chapterId);
         parentFrame.updateNotes(bibleId, bookId, chapterId);
+        parentFrame.updateConcordance(bookId, chapterId);
+    }
+
+    public void setFieldsByReference(Long bookId, Long chapterId, Long verseNum) {
+        Long nextVerse = verseNum + 1;
+        getBibleLinks(bibleId, bookId, chapterId);
+        textArea.setDocument(createHTMLDocument());
+        Highlighter highlighter = textArea.getHighlighter();
+        highlighter.removeAllHighlights();
+        try {
+            String text = textArea.getDocument().getText(0, textArea.getDocument().getLength());
+            textArea.setSelectionStart(text.indexOf(verseNum.toString(), text.lastIndexOf("\n")));
+            textArea.setSelectionEnd(
+                    text.indexOf(nextVerse.toString()) == -1 ? text.length() : text.indexOf(nextVerse.toString(),
+                            textArea.getSelectionStart())
+            );
+            highlighter.addHighlight(textArea.getSelectionStart(), textArea.getSelectionEnd(), new DefaultHighlighter.DefaultHighlightPainter(Color.ORANGE));
+            textArea.setCaretPosition(textArea.getSelectionStart());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        footerToolBar.updateBookAndChapter(bookId, chapterId);
+        parentFrame.updateNotes(bibleId, bookId, chapterId);
+        parentFrame.updateConcordance(bookId, chapterId);
     }
 
     public void getBibleLinks(Long bibleId, Long bookId, Long chapterId) {
