@@ -31,6 +31,7 @@ public class ConcordanceWindow extends JFrame {
     private JScrollPane pane;
     private JButton nextButton;
     private JButton prevButton;
+    private JTextField searchField;
     private ConcordanceHTMLDocument htmlDocument;
     private String search = "A";
     private Vector<Word> words;
@@ -72,7 +73,7 @@ public class ConcordanceWindow extends JFrame {
         // Make Search Box
         JPanel searchPanel = new JPanel();
         searchPanel.setLayout(new FlowLayout(FlowLayout.RIGHT));
-        JTextField searchField = new JTextField(8);
+        searchField = new JTextField(8);
         searchField.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 18));
         JButton searchButton = new JButton("Search");
         searchButton.addActionListener(event -> {
@@ -80,7 +81,7 @@ public class ConcordanceWindow extends JFrame {
                 search = searchField.getText();
                 startIndex = 0;
                 getWords(search);
-                if (words.isEmpty() || words.size() < 11) {
+                if (words.isEmpty() || totalCount <= batchSize || startIndex + batchSize >= totalCount) {
                     nextButton.setEnabled(false);
                 }
                 textPane.setDocument(htmlDocument.updatePage(words));
@@ -95,6 +96,7 @@ public class ConcordanceWindow extends JFrame {
                 getWords(search);
                 textPane.setDocument(htmlDocument.updatePage(words));
                 pane.getVerticalScrollBar().setValue(0);
+                nextButton.setEnabled(true);
                 searchField.setText("");
                 searchField.validate();
                 searchField.repaint();
@@ -161,11 +163,11 @@ public class ConcordanceWindow extends JFrame {
                     nextButton.setEnabled(false);
                 } else if (createLetters().contains(search)) {
                     // If Search is done by letter
-                    startIndex = 0;
                     if (search.equals(createLetters().get(createLetters().size() - 1))) {
                         nextButton.setEnabled(false);
                     } else {
                         search = createLetters().get(createLetters().indexOf(search) + 1);
+                        startIndex = 0;
                     }
                 } else {
                     nextButton.setEnabled(false);
@@ -174,6 +176,11 @@ public class ConcordanceWindow extends JFrame {
                 startIndex += batchSize;
             }
             getWords(search);
+            if (startIndex + batchSize >= totalCount && search.length() > 1) {
+                nextButton.setEnabled(false);
+            } else if (startIndex + batchSize >= totalCount && search.equals(createLetters().get(createLetters().size() - 1))) {
+                nextButton.setEnabled(false);
+            }
             textPane.setDocument(htmlDocument.updatePage(words));
             pane.getVerticalScrollBar().setValue(0);
             prevButton.setEnabled(true);
@@ -213,7 +220,7 @@ public class ConcordanceWindow extends JFrame {
         panel.setLayout(new BorderLayout());
 
         // Set up Text Pane
-        htmlDocument = new ConcordanceHTMLDocument(words, textSize);
+        htmlDocument = new ConcordanceHTMLDocument(words, textSize, true);
         textPane = new JTextPane();
         textPane.setContentType("text/html");
         textPane.setDocument(htmlDocument.createDocument());
@@ -290,6 +297,9 @@ public class ConcordanceWindow extends JFrame {
                 int nodeIndex = parentNode.getIndex(node);
                 startIndex = (int) Math.floor(nodeIndex / 10.0) * 10;
                 search = parentNode.getUserObject().toString();
+                searchField.setText("");
+                searchField.validate();
+                searchField.repaint();
                 getWords(search);
                 textPane.setDocument(htmlDocument.updatePage(words));
 

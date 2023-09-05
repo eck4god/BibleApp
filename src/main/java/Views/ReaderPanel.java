@@ -62,6 +62,7 @@ public class ReaderPanel extends JPanel {
         textArea.setDocument(createHTMLDocument());
         footerToolBar.updateBookAndChapter(bookId, chapterId);
         parentFrame.updateNotes(bibleId, bookId, chapterId);
+        parentFrame.updateConcordance(bookId, chapterId);
     }
 
     public void getBibleLinks(Long bibleId, Long bookId, Long chapterId) {

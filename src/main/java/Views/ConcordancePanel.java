@@ -7,31 +7,38 @@ import main.java.Service.ProgramDirectoryService;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
+import javax.swing.event.HyperlinkEvent;
+import javax.swing.text.BadLocationException;
 import java.awt.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.Vector;
 
 public class ConcordancePanel extends JPanel {
 
     private final String path;
+    private Long bookId;
+    private Long chapterId;
     private Application application;
     private JTextPane textPane;
     private JScrollPane pane;
-    private String searchLetter = "A";
-    private String searchWord = "";
+    private JTextField searchField;
+    private String search = "";
     private Vector<Word> words;
     private ConcordanceHTMLDocument htmlDocument;
+    private ArrayList<String> expandedWords = new ArrayList<>();
     private int textSize;
-    private int startIndex = 0;
-    private int batchSize = 10;
-    private int totalCount = 0;
+    private int scrollPos;
 
-    public ConcordancePanel(Application application, int textSize) {
+    public ConcordancePanel(Application application, int textSize, Long bookId, Long chapterId) {
         this.application = application;
         this.textSize = textSize;
+        this.bookId = bookId;
+        this.chapterId = chapterId;
         ProgramDirectoryService programDirectoryService = new ProgramDirectoryService();
         path = programDirectoryService.getProgramDirectory();
-        getWords(searchLetter);
+        getWordsByReference();
 
         setupPanel();
     }
@@ -49,108 +56,56 @@ public class ConcordancePanel extends JPanel {
         toolBar.setFloatable(false);
         toolBar.setRollover(true);
 
-        JButton nextButton = new JButton();
-        JButton prevButton = new JButton();
-
-        // Letter Navigator
-        ArrayList<String> letters = createLetters();
-        JPanel letterPanel = new JPanel();
-        letterPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
-        for (String letter : letters) {
-            JButton button = new JButton(letter);
-            button.addActionListener(event -> {
-                startIndex = 0;
-                searchLetter = letter;
-                getWords(searchLetter);
-                for (Word word : words) {
-                    System.out.println(word.getWord());
-                }
-                textPane.setDocument(htmlDocument.updatePage(words));
-                pane.getVerticalScrollBar().setValue(0);
-                if (searchLetter.equals("A")) {
-                    prevButton.setEnabled(false);
-                } else {
-                    prevButton.setEnabled(true);
-                }
-            });
-            letterPanel.add(button);
-        }
-
         // Search Box
         JPanel navPanel = new JPanel();
         navPanel.setLayout(new BorderLayout());
 
         JPanel searchPanel = new JPanel();
         searchPanel.setLayout(new FlowLayout(FlowLayout.RIGHT));
-        JTextField search = new JTextField(8);
-        search.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 18));
+        searchField = new JTextField(8);
+        searchField.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 18));
         JButton searchButton = new JButton("Search");
+        searchButton.addActionListener(event -> {
+            if (searchField.getText().length() > 1) {
+                search = searchField.getText();
+                getWords(search);
+                textPane.setDocument(htmlDocument.updatePage(words));
+                pane.getVerticalScrollBar().setValue(0);
+            }
+        });
         JButton clearButton = new JButton("Clear");
         clearButton.addActionListener(event -> {
-            ConcordanceWindow concordanceWindow = new ConcordanceWindow(application, textSize);
-            concordanceWindow.setVisible(true);
+            if (search.length() > 1) {
+                getWordsByReference();
+                textPane.setDocument(htmlDocument.updatePage(words));
+                pane.getVerticalScrollBar().setValue(0);
+                searchField.setText("");
+                searchField.validate();
+                searchField.repaint();
+            } else {
+                searchField.setText("");
+                searchField.validate();
+                searchField.repaint();
+            }
         });
-        searchPanel.add(search);
+        searchPanel.add(searchField);
         searchPanel.add(searchButton);
         searchPanel.add(clearButton);
 
+        // Open Concordance Button
         JPanel buttonPanel = new JPanel();
         buttonPanel.setLayout(new FlowLayout(FlowLayout.LEFT));
-        prevButton.setIcon(new ImageIcon(path + "/Resources/Icons/leftArrow.png"));
-        prevButton.setPreferredSize(new Dimension(25,25));
-        if (startIndex == 0) {
-            prevButton.setEnabled(false);
-        }
-        prevButton.addActionListener(event -> {
-            if (startIndex - batchSize <= 0) {
-                startIndex = 0;
-                if (searchLetter.equals(letters.get(0))) {
-                    prevButton.setEnabled(false);
-                } else {
-                    searchLetter = letters.get(letters.indexOf(searchLetter) - 1);
-                    try {
-                        DatabaseConnection databaseConnection = new DatabaseConnection();
-                        totalCount = databaseConnection.getTotalCountOfPagedWordByString(searchLetter);
-                        databaseConnection.close();
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                    startIndex = (int) Math.ceil((totalCount / 10)) * 10;
-                }
-            } else {
-                startIndex -= batchSize;
-            }
-            getWords(searchLetter);
-            textPane.setDocument(htmlDocument.updatePage(words));
-            pane.getVerticalScrollBar().setValue(0);
-            nextButton.setEnabled(true);
+        JButton openButton = new JButton("Open Concordance");
+        openButton.addActionListener(e -> {
+            ConcordanceWindow concordanceWindow = new ConcordanceWindow(application, textSize);
+            concordanceWindow.setVisible(true);
         });
 
-        nextButton.setIcon(new ImageIcon(path + "/Resources/Icons/rightArrow.png"));
-        nextButton.addActionListener(event -> {
-            if (startIndex + batchSize > totalCount) {
-                startIndex = 0;
-                if (searchLetter.equals(letters.get(letters.size() -1))) {
-                    nextButton.setEnabled(false);
-                } else {
-                    searchLetter = letters.get(letters.indexOf(searchLetter) + 1);
-                }
-            } else {
-                startIndex += batchSize;
-            }
-            getWords(searchLetter);
-            textPane.setDocument(htmlDocument.updatePage(words));
-            pane.getVerticalScrollBar().setValue(0);
-            prevButton.setEnabled(true);
-        });
-        nextButton.setPreferredSize(new Dimension(25,25));
-        buttonPanel.add(prevButton);
-        buttonPanel.add(nextButton);
+        buttonPanel.add(openButton);
 
         navPanel.add(buttonPanel, BorderLayout.WEST);
         navPanel.add(searchPanel, BorderLayout.EAST);
 
-        toolBar.add(letterPanel, BorderLayout.NORTH);
         toolBar.add(navPanel, BorderLayout.CENTER);
         this.add(toolBar, BorderLayout.NORTH);
     }
@@ -159,7 +114,7 @@ public class ConcordancePanel extends JPanel {
         if (words.isEmpty()) {
             emptyLabel();
         } else {
-            htmlDocument = new ConcordanceHTMLDocument(words,textSize);
+            htmlDocument = new ConcordanceHTMLDocument(words,textSize, false, expandedWords);
             textPane = new JTextPane();
             textPane.setContentType("text/html");
             textPane.setEditable(false);
@@ -168,6 +123,30 @@ public class ConcordancePanel extends JPanel {
             pane = new JScrollPane();
             pane.setPreferredSize(this.getPreferredSize());
             pane.setViewportView(textPane);
+            textPane.addHyperlinkListener(event -> {
+                if (event.getEventType() == HyperlinkEvent.EventType.ACTIVATED) {
+                    if (expandedWords.contains(event.getDescription())) {
+                        expandedWords.remove(event.getDescription());
+                        textPane.setDocument(htmlDocument.updateArrayList(expandedWords));
+                        try {
+                            String text = textPane.getDocument().getText(0, textPane.getDocument().getLength());
+                            textPane.setCaretPosition(text.indexOf("\n" + event.getDescription()));
+                        } catch (BadLocationException e) {
+                            e.printStackTrace();
+                        }
+                    } else {
+                        expandedWords.add(event.getDescription());
+                        textPane.setDocument(htmlDocument.updateArrayList(expandedWords));
+                        try {
+                            String text = textPane.getDocument().getText(0, textPane.getDocument().getLength());
+                            textPane.setCaretPosition(text.indexOf("\n" + event.getDescription()));
+                        } catch (BadLocationException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
+            });
+
             this.add(pane, BorderLayout.CENTER);
         }
     }
@@ -178,19 +157,6 @@ public class ConcordancePanel extends JPanel {
         this.add(label, BorderLayout.CENTER);
     }
 
-    private ArrayList<String> createLetters() {
-        ArrayList<String> letters = new ArrayList<>();
-        letters.add("A"); letters.add("B"); letters.add("C"); letters.add("D");
-        letters.add("E"); letters.add("F"); letters.add("G"); letters.add("H");
-        letters.add("I"); letters.add("J"); letters.add("K"); letters.add("L");
-        letters.add("M"); letters.add("N"); letters.add("O"); letters.add("P");
-        letters.add("Q"); letters.add("R"); letters.add("S"); letters.add("T");
-        letters.add("U"); letters.add("V"); letters.add("W"); letters.add("X");
-        letters.add("Y"); letters.add("Z");
-
-        return letters;
-    }
-
     public void setTextSize(int textSize) {
         this.textSize = textSize;
         textPane.setDocument(htmlDocument.setTextSize(textSize));
@@ -199,11 +165,30 @@ public class ConcordancePanel extends JPanel {
     private void getWords(String search) {
         try {
             DatabaseConnection databaseConnection = new DatabaseConnection();
-            words = databaseConnection.getPagedWordByString(search, startIndex, batchSize);
-            totalCount = databaseConnection.getTotalCountOfPagedWordByString(search);
+            int totalCount = databaseConnection.getTotalCountOfPagedWordByString(search);
+            words = databaseConnection.getPagedWordByString(search, 0, totalCount);
             databaseConnection.close();
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    private void getWordsByReference() {
+        try {
+            DatabaseConnection databaseConnection = new DatabaseConnection();
+            words = databaseConnection.getWordByReference(bookId, chapterId);
+            databaseConnection.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void updateReference(Long bookId, Long chapterId) {
+        this.bookId = bookId;
+        this.chapterId = chapterId;
+        getWordsByReference();
+        textPane.setDocument(htmlDocument.updatePage(words));
+        search = "";
+        searchField.setText("");
     }
 }

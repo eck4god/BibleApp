@@ -298,13 +298,18 @@ public class Application extends JFrame {
     }
 
     private void createConcordanceTab() {
-        concordancePanel = new ConcordancePanel(this, textSize);
+        ReaderPanel readerPanel = (ReaderPanel) tabbedPane.getSelectedComponent();
+        concordancePanel = new ConcordancePanel(this, textSize, readerPanel.getBook(), readerPanel.getChapter());
 
         referencePane.addTab("Concordance", concordancePanel);
     }
 
     public void updateNotes(Long bibleId, Long bookId, Long chapterId) {
         notesPanel.updateNotes(bibleId, bookId, chapterId);
+    }
+
+    public void updateConcordance(Long bibleId, Long chapterId) {
+        concordancePanel.updateReference(bibleId, chapterId);
     }
 
     private void importDialog() {
@@ -411,11 +416,13 @@ public class Application extends JFrame {
             splitPane.remove(emptyPanel);
             splitPane.add(tabbedPane);
             updateNotes(bibles.get(0).getBibleId(), 1L, 1L);
+            updateConcordance(1L, 1L);
         }
 
         ReaderPanel readerPanel = (ReaderPanel) tabbedPane.getSelectedComponent();
         readerPanel.setSearchFields(readerPanel.getBible(), book, chapter);
         updateNotes(readerPanel.getBible(), book, chapter);
+        updateConcordance(book, chapter);
     }
 
     public void setTextSize(int textSize) {

@@ -410,6 +410,24 @@ public class DatabaseConnection {
         return words;
     }
 
+    public Vector<Word> getWordByReference(Long bookId, Long chapterId) throws Exception {
+        Statement statement = conn.createStatement();
+        String sql = "SELECT DISTINCT w.word, w.wordId FROM Reference AS r LEFT JOIN Words AS w ON r.wordId = w.wordId WHERE " +
+                "bookId = " + bookId + " AND chapterId = " + chapterId + ";";
+
+        Vector<Word> words = new Vector<>();
+        ResultSet resultSet = statement.executeQuery(sql);
+
+        while (resultSet.next()) {
+            Word word = new Word();
+            word.setWordId(resultSet.getLong("wordId"));
+            word.setWord(resultSet.getString("word"));
+            words.add(word);
+        }
+
+        return words;
+    }
+
     public Vector<Reference> getReferenceByWordId(Long wordId) throws Exception {
         Statement statement = conn.createStatement();
         String sql = "SELECT * FROM Reference WHERE wordId = " + wordId + ";";
