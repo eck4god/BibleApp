@@ -425,6 +425,11 @@ public class Application extends JFrame {
         updateConcordance(book, chapter);
     }
 
+    public void navigateToReference(Long bookId, Long chapterId, Long verseNum) {
+        ReaderPanel readerPanel = (ReaderPanel) tabbedPane.getSelectedComponent();
+        readerPanel.setFieldsByReference(bookId, chapterId, verseNum);
+    }
+
     public void setTextSize(int textSize) {
         this.textSize = textSize;
         notesPanel.setTextSize(textSize);

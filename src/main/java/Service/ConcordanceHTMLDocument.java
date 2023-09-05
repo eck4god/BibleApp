@@ -100,7 +100,9 @@ public class ConcordanceHTMLDocument extends HTMLDocument {
                         text = text.concat("<tr><td class=\"data\">" + reference.getCitation() + "</td></tr>");
                     } else {
                         text = text.concat("<tr>");
-                        text = text.concat("<td class=\"data\">" + books.get(reference.getBookId().intValue() - 1).getBookAbbrev() + " " + reference.getChapterId() + ":" + reference.getVerseNum() + "</td>");
+                        text = text.concat("<td class=\"data\"><a href=\'" + reference.getBookId() + ";" + reference.getChapterId() + ";" + reference.getVerseNum() + "\'>" +
+                                books.get(reference.getBookId().intValue() - 1).getBookAbbrev() + " " + reference.getChapterId() + ":" + reference.getVerseNum() +
+                                "</a></td>");
                         text = text.concat("<td>" + reference.getText() + "</td>");
                         text = text.concat("<td>" + reference.getLink() + "</td>");
                         text = text.concat("</tr>");

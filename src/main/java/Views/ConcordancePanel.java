@@ -125,24 +125,29 @@ public class ConcordancePanel extends JPanel {
             pane.setViewportView(textPane);
             textPane.addHyperlinkListener(event -> {
                 if (event.getEventType() == HyperlinkEvent.EventType.ACTIVATED) {
-                    if (expandedWords.contains(event.getDescription())) {
-                        expandedWords.remove(event.getDescription());
-                        textPane.setDocument(htmlDocument.updateArrayList(expandedWords));
-                        try {
-                            String text = textPane.getDocument().getText(0, textPane.getDocument().getLength());
-                            textPane.setCaretPosition(text.indexOf("\n" + event.getDescription()));
-                        } catch (BadLocationException e) {
-                            e.printStackTrace();
+                    if (!event.getDescription().contains(";")) {
+                        if (expandedWords.contains(event.getDescription())) {
+                            expandedWords.remove(event.getDescription());
+                            textPane.setDocument(htmlDocument.updateArrayList(expandedWords));
+                            try {
+                                String text = textPane.getDocument().getText(0, textPane.getDocument().getLength());
+                                textPane.setCaretPosition(text.indexOf("\n" + event.getDescription()));
+                            } catch (BadLocationException e) {
+                                e.printStackTrace();
+                            }
+                        } else {
+                            expandedWords.add(event.getDescription());
+                            textPane.setDocument(htmlDocument.updateArrayList(expandedWords));
+                            try {
+                                String text = textPane.getDocument().getText(0, textPane.getDocument().getLength());
+                                textPane.setCaretPosition(text.indexOf("\n" + event.getDescription()));
+                            } catch (BadLocationException e) {
+                                e.printStackTrace();
+                            }
                         }
                     } else {
-                        expandedWords.add(event.getDescription());
-                        textPane.setDocument(htmlDocument.updateArrayList(expandedWords));
-                        try {
-                            String text = textPane.getDocument().getText(0, textPane.getDocument().getLength());
-                            textPane.setCaretPosition(text.indexOf("\n" + event.getDescription()));
-                        } catch (BadLocationException e) {
-                            e.printStackTrace();
-                        }
+                        String[] ref = event.getDescription().split(";");
+                        application.navigateToReference(Long.parseLong(ref[0]), Long.parseLong(ref[1]), Long.parseLong(ref[2]));
                     }
                 }
             });

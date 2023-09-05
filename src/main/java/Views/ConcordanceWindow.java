@@ -7,6 +7,7 @@ import main.java.Service.ProgramDirectoryService;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
+import javax.swing.event.HyperlinkEvent;
 import javax.swing.text.BadLocationException;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeCellRenderer;
@@ -222,8 +223,15 @@ public class ConcordanceWindow extends JFrame {
         // Set up Text Pane
         htmlDocument = new ConcordanceHTMLDocument(words, textSize, true);
         textPane = new JTextPane();
+        textPane.setEditable(false);
         textPane.setContentType("text/html");
         textPane.setDocument(htmlDocument.createDocument());
+        textPane.addHyperlinkListener(event -> {
+            if (event.getEventType() == HyperlinkEvent.EventType.ACTIVATED) {
+                String[] ref = event.getDescription().split(";");
+                application.navigateToReference(Long.parseLong(ref[0]), Long.parseLong(ref[1]), Long.parseLong(ref[2]));
+            }
+        });
         pane = new JScrollPane();
         pane.setViewportView(textPane);
 
