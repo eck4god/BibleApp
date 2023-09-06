@@ -455,6 +455,26 @@ public class ProcessJSON {
         return textSize;
     }
 
+    public void setReferencePaneVisible(boolean isVisible) throws Exception {
+        JSONParser parser = new JSONParser();
+        Object obj = parser.parse(new FileReader(file));
+        JSONObject jsonObject = (JSONObject) obj;
+        jsonObject.put("refPaneVisible", isVisible);
+        FileWriter fileWriter = new FileWriter(file);
+        fileWriter.write(jsonObject.toJSONString());
+        jsonObject.clear();
+        fileWriter.close();
+    }
+
+    public boolean getReferencePaneVisible() throws Exception {
+        JSONParser parser = new JSONParser();
+        Object obj = parser.parse(new FileReader(file));
+        JSONObject jsonObject = (JSONObject) obj;
+        boolean isVisible = (boolean) jsonObject.get("refPaneVisible");
+        jsonObject.clear();
+        return isVisible;
+    }
+
     private Class Progress(String label, int overall, int inner) {
         return Progress(label, overall, inner);
     }

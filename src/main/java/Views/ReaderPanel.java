@@ -60,6 +60,8 @@ public class ReaderPanel extends JPanel {
     }
 
     public void setSearchFields(Long bibleId, Long bookId, Long chapterId) {
+        Highlighter highlighter = textArea.getHighlighter();
+        highlighter.removeAllHighlights();
         getBibleLinks(bibleId, bookId, chapterId);
         textArea.setDocument(createHTMLDocument());
         footerToolBar.updateBookAndChapter(bookId, chapterId);
