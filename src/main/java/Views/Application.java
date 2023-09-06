@@ -35,6 +35,7 @@ public class Application extends JFrame {
     private NotesPanel notesPanel;
     private ConcordancePanel concordancePanel;
     private boolean isVisible = true;
+    private boolean refPanelVisible = true;
 
     public Application() {
         // Gets Absolute Path of Application
@@ -49,6 +50,7 @@ public class Application extends JFrame {
             x = processJSON.getX();
             y = processJSON.getY();
             isVisible = processJSON.getNavPaneVisible();
+            refPanelVisible = processJSON.getReferencePaneVisible();
             textSize = processJSON.getTextSize();
         } catch (Exception e) {
             screenWidth = 1024;
@@ -79,6 +81,9 @@ public class Application extends JFrame {
         createReferenceTabbedPane();
         verticalSplitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, tabbedPane, referencePane);
         verticalSplitPane.setResizeWeight(0.75);
+        if (!refPanelVisible) {
+            verticalSplitPane.getBottomComponent().setVisible(false);
+        }
         splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, navigationPane, verticalSplitPane);
         if (!isVisible)
             splitPane.getLeftComponent().setVisible(false);
@@ -146,10 +151,20 @@ public class Application extends JFrame {
                 splitPane.setDividerLocation(200);
             }
         });
+        JMenuItem refView = new JMenuItem("Show/Hide Ref Pane");
+        refView.addActionListener(event -> {
+            if (verticalSplitPane.getBottomComponent().isVisible()) {
+                verticalSplitPane.getBottomComponent().setVisible(false);
+            } else {
+                verticalSplitPane.getBottomComponent().setVisible(true);
+                verticalSplitPane.setDividerLocation(750);
+            }
+        });
 
         view.add(addBible);
         view.addSeparator();
         view.add(navView);
+        view.add(refView);
 
         menu.add(view);
 
@@ -174,7 +189,22 @@ public class Application extends JFrame {
             }
         });
         showNavPane.setToolTipText("Show/Hide Navigation Pane");
+
+        JButton showReferencePane = new JButton();
+        showReferencePane.setIcon(new ImageIcon(path + "/Resources/Icons/bottomPanel.png"));
+        showReferencePane.setPreferredSize(new Dimension(50,50));
+        showReferencePane.setToolTipText("Show/Hide Reference Pane");
+        showReferencePane.addActionListener(event -> {
+           if (verticalSplitPane.getBottomComponent().isVisible()) {
+               verticalSplitPane.getBottomComponent().setVisible(false);
+           } else {
+               verticalSplitPane.getBottomComponent().setVisible(true);
+               verticalSplitPane.setDividerLocation(750);
+           }
+        });
+
         toolBar.add(showNavPane);
+        toolBar.add(showReferencePane);
 
         // Add Separator
         toolBar.addSeparator();
@@ -207,6 +237,7 @@ public class Application extends JFrame {
             ReaderPanel temp = (ReaderPanel) tabbedPane.getSelectedComponent();
             if (notesPanel != null) {
                 updateNotes(temp.getBible(), temp.getBook(), temp.getChapter());
+                updateConcordance(temp.getBook(), temp.getChapter());
             }
         });
 
@@ -460,8 +491,8 @@ public class Application extends JFrame {
         JDialog dialog = new JDialog(this, "Select a Bible");
         dialog.setLayout(new BorderLayout());
         dialog.setResizable(false);
-        dialog.setSize(new Dimension(400, 150));
-        dialog.setLocation((this.getWidth() / 2) + this.getX() - 200, (this.getHeight() / 2) + this.getY() - 75);
+        dialog.setSize(new Dimension(400, 200));
+        dialog.setLocation((this.getWidth() / 2) + this.getX() - 200, (this.getHeight() / 2) + this.getY() - 100);
 
         JPanel panel = new JPanel();
         panel.setLayout(new BorderLayout());
@@ -621,6 +652,7 @@ public class Application extends JFrame {
             processJSON.setWindowPosition(this.getX(), this.getY());
             processJSON.saveTabs(openTabs);
             processJSON.setNavPaneVisible(splitPane.getLeftComponent().isVisible());
+            processJSON.setReferencePaneVisible(verticalSplitPane.getBottomComponent().isVisible());
             processJSON.setTextSize(textSize);
         } catch (Exception e) {
             e.printStackTrace();
