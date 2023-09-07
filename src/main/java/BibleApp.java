@@ -43,13 +43,20 @@ public class BibleApp {
         ProgramDirectoryService programDirectoryService = new ProgramDirectoryService();
         String path = programDirectoryService.getProgramDirectory();
 
-        WelcomeScreen welcomeScreen = new WelcomeScreen();
+        String version = "";
+        ProcessJSON config = new ProcessJSON(new File(path + "/Resources/config.json"));
+        try {
+            version = config.getVersion();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        WelcomeScreen welcomeScreen = new WelcomeScreen(version);
         welcomeScreen.setVisible(true);
 
         boolean firstRun = false;
         int dbComplete;
 
-        ProcessJSON config = new ProcessJSON(new File(path + "/Resources/config.json"));
         try {
             firstRun = config.isFirstRun();
         } catch (Exception e) {

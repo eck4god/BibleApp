@@ -45,6 +45,14 @@ public class ProcessJSON {
             return false;
     }
 
+    public String getVersion() throws Exception {
+        JSONParser parser = new JSONParser();
+        Object obj = parser.parse(new FileReader(file));
+        JSONObject jsonObject = (JSONObject) obj;
+        String version = jsonObject.get("version").toString();
+        return version;
+    }
+
     public void setFirstRun() throws Exception {
         JSONParser parser = new JSONParser();
         Object obj = parser.parse(new FileReader(file));
