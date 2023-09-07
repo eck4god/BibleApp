@@ -369,8 +369,8 @@ public class ProcessJSON {
         jsonObject.clear();
     }
 
-    public ArrayList<Long[]> getTabs() throws Exception {
-        ArrayList<Long[]> openTabs = new ArrayList<>();
+    public ArrayList<Object[]> getTabs() throws Exception {
+        ArrayList<Object[]> openTabs = new ArrayList<>();
         JSONParser parser = new JSONParser();
         Object obj = parser.parse(new FileReader(file));
         JSONObject jsonObject = (JSONObject) obj;
@@ -378,10 +378,12 @@ public class ProcessJSON {
 
         for (Object object : tabs) {
             JSONObject tab = (JSONObject) object;
-            Long[] tabData = {
+            Object[] tabData = {
                     (Long) tab.get("bibleId"),
                     (Long) tab.get("bookId"),
                     (Long) tab.get("chapterId"),
+                    (boolean) tab.get("showNote"),
+                    (boolean) tab.get("showRef"),
                     (Long) tab.get("isSelected")
             };
             openTabs.add(tabData);
@@ -391,18 +393,20 @@ public class ProcessJSON {
         return openTabs;
     }
 
-    public void saveTabs(ArrayList<Long[]> tabs) throws Exception {
+    public void saveTabs(ArrayList<Object[]> tabs) throws Exception {
         JSONParser parser = new JSONParser();
         Object obj = parser.parse(new FileReader(file));
         JSONObject jsonObject = (JSONObject) obj;
 
         JSONArray tabArray = new JSONArray();
-        for (Long[] tab : tabs) {
+        for (Object[] tab : tabs) {
             JSONObject tabData = new JSONObject();
             tabData.put("bibleId", tab[0]);
             tabData.put("bookId", tab[1]);
             tabData.put("chapterId", tab[2]);
-            tabData.put("isSelected", tab[3]);
+            tabData.put("showNote", tab[3]);
+            tabData.put("showRef", tab[4]);
+            tabData.put("isSelected", tab[5]);
 
             tabArray.add(tabData);
         }

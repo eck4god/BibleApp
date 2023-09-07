@@ -214,6 +214,32 @@ public class ReaderPanel extends JPanel {
         return bibleLinks.get(0).getBook().getBookNumber();
     }
 
+    public void toggleShowInlineRef() {
+        if (showInlineRef) {
+            showInlineRef = false;
+        } else {
+            showInlineRef = true;
+        }
+        textArea.setDocument(doc.setShowRef(showInlineRef));
+    }
+
+    public void toggleShowInlineNotes() {
+        if (showInlineNotes) {
+            showInlineNotes = false;
+        } else {
+            showInlineNotes = true;
+        }
+        textArea.setDocument(doc.setShowNotes(showInlineNotes));
+    }
+
+    public boolean getShowInlineRef() {
+        return showInlineRef;
+    }
+
+    public boolean getShowInlineNotes() {
+        return showInlineNotes;
+    }
+
     private void addNote(Long bookId, Long chapterId, Long verseId, Notes note, String html) {
         JDialog dialog = new JDialog();
         dialog.setSize(new Dimension(600,400));

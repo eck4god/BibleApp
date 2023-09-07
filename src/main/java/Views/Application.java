@@ -36,8 +36,6 @@ public class Application extends JFrame {
     private ConcordancePanel concordancePanel;
     private boolean isVisible = true;
     private boolean refPanelVisible = true;
-    private boolean showInlineNotes = false;
-    private boolean showInlineRef = false;
 
     public Application() {
         // Gets Absolute Path of Application
@@ -162,8 +160,21 @@ public class Application extends JFrame {
                 verticalSplitPane.setDividerLocation(750);
             }
         });
+        JMenuItem inlineRef = new JMenuItem("Show/Hide References in Bible");
+        inlineRef.addActionListener(event -> {
+            ReaderPanel readerPanel = (ReaderPanel) tabbedPane.getSelectedComponent();
+            readerPanel.toggleShowInlineRef();
+        });
+        JMenuItem inlineNote = new JMenuItem("Show/Hide Notes in Bible");
+        inlineNote.addActionListener(event -> {
+            ReaderPanel readerPanel = (ReaderPanel) tabbedPane.getSelectedComponent();
+            readerPanel.toggleShowInlineNotes();
+        });
 
         view.add(addBible);
+        view.addSeparator();
+        view.add(inlineRef);
+        view.add(inlineNote);
         view.addSeparator();
         view.add(navView);
         view.add(refView);
@@ -244,7 +255,7 @@ public class Application extends JFrame {
         });
 
         // Get Saved tabs and restore them
-        ArrayList<Long[]> tabs = new ArrayList<>();
+        ArrayList<Object[]> tabs = new ArrayList<>();
         ProcessJSON processJSON = new ProcessJSON(new File(path + "/Resources/config.json"));
         try {
             tabs = processJSON.getTabs();
@@ -254,24 +265,24 @@ public class Application extends JFrame {
 
         // Restore tabs
         if (tabs.isEmpty()) {
-            addReaderPane(bibles.get(0), 1L, 1L);
+            addReaderPane(bibles.get(0), 1L, 1L, false, false);
         } else {
-            for (Long[] tab : tabs) {
+            for (Object[] tab : tabs) {
                 Bible selected = new Bible();
                 for (Bible bible : bibles) {
                     if (Objects.equals(bible.getBibleId(), tab[0])) {
                         selected = bible;
                     }
                 }
-                addReaderPane(selected, tab[1], tab[2]);
-                if (tab[3] == 1) {
+                addReaderPane(selected, (long) tab[1], (long) tab[2], (boolean) tab[3], (boolean) tab[4]);
+                if ((long) tab[5] == 1L) {
                     tabbedPane.setSelectedIndex(tabbedPane.getTabCount() - 1);
                 }
             }
         }
     }
 
-    private void addReaderPane(Bible bible, Long bookId, Long chapterId) {
+    private void addReaderPane(Bible bible, Long bookId, Long chapterId, boolean showInlineNotes, boolean showInlineRef) {
         int index = tabbedPane.getTabCount();
         ReaderPanel readerPanel = new ReaderPanel(this, textSize, bible.getBibleId(), bookId, chapterId, showInlineNotes, showInlineRef);
 
@@ -444,7 +455,7 @@ public class Application extends JFrame {
     public void navigateTo(Long book, Long chapter) {
         // If no tabs exist, Create one with the first Bible in the list
         if (tabbedPane.getTabCount() == 0) {
-            addReaderPane(bibles.get(0), 1L, 1L);
+            addReaderPane(bibles.get(0), 1L, 1L, false, false);
             tabbedPane.setVisible(true);
             splitPane.remove(emptyPanel);
             splitPane.add(tabbedPane);
@@ -532,7 +543,7 @@ public class Application extends JFrame {
         submitButton.addActionListener(e -> {
             for (Bible bible : bibles) {
                 if (Objects.equals(Objects.requireNonNull(comboBox.getSelectedItem()).toString(), bible.getBibleName())) {
-                    addReaderPane(bible, 1L, 1L);
+                    addReaderPane(bible, 1L, 1L, false, false);
                 }
             }
             if (tabbedPane.getTabCount() == 1) {
@@ -630,7 +641,7 @@ public class Application extends JFrame {
 
     private void performQuit() {
         // Get open tabs to save to config.json
-        ArrayList<Long[]> openTabs = new ArrayList<>();
+        ArrayList<Object[]> openTabs = new ArrayList<>();
         long isSelected;
         for (int i = 0; i < tabbedPane.getTabCount(); i++) {
             ReaderPanel readerPanel = (ReaderPanel) tabbedPane.getComponentAt(i);
@@ -638,10 +649,12 @@ public class Application extends JFrame {
                 isSelected = 1L;
             else
                 isSelected = 0L;
-            Long[] tab = {
+            Object[] tab = {
                     readerPanel.getBible(),
                     readerPanel.getBook(),
                     readerPanel.getChapter(),
+                    readerPanel.getShowInlineNotes(),
+                    readerPanel.getShowInlineRef(),
                     isSelected
 
             };
