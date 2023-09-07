@@ -36,6 +36,8 @@ public class Application extends JFrame {
     private ConcordancePanel concordancePanel;
     private boolean isVisible = true;
     private boolean refPanelVisible = true;
+    private boolean showInlineNotes = false;
+    private boolean showInlineRef = false;
 
     public Application() {
         // Gets Absolute Path of Application
@@ -271,7 +273,7 @@ public class Application extends JFrame {
 
     private void addReaderPane(Bible bible, Long bookId, Long chapterId) {
         int index = tabbedPane.getTabCount();
-        ReaderPanel readerPanel = new ReaderPanel(this, textSize, bible.getBibleId(), bookId, chapterId);
+        ReaderPanel readerPanel = new ReaderPanel(this, textSize, bible.getBibleId(), bookId, chapterId, showInlineNotes, showInlineRef);
 
         // Creates Tab Label and close button
         JPanel tabPanel = new JPanel();
