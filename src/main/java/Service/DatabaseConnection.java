@@ -304,6 +304,55 @@ public class DatabaseConnection {
         return notes;
     }
 
+    public Notes getNoteById(Long noteId) throws Exception {
+        Statement statement = conn.createStatement();
+        String sql = "SELECT * FROM Notes where noteId = " + noteId + ";";
+        Notes note = new Notes();
+        ResultSet resultSet = statement.executeQuery(sql);
+
+        while (resultSet.next()) {
+            note.setNoteId(resultSet.getLong("noteId"));
+            note.setBibleId(resultSet.getLong("bibleId"));
+            note.setBookId(resultSet.getLong("bookId"));
+            note.setChapterId(resultSet.getLong("chapterId"));
+            note.setVerseId(resultSet.getLong("verseId"));
+            note.setNoteText(resultSet.getString("noteText"));
+        }
+
+        return note;
+    }
+
+    public Vector<Notes> getNotesByVerse(Long bibleId, Long bookId, Long chapterId, long verseId) throws Exception {
+        Statement statement = conn.createStatement();
+        String sql = "SELECT * FROM Notes where bibleId = " + bibleId + " AND bookId = " + bookId +
+                " AND chapterId = " + chapterId;
+        if (verseId == 0L) {
+            sql = sql.concat(" AND verseId IS NULL OR bibleId = " + bibleId + " AND bookId = " + bookId +
+                    " AND chapterId = " + chapterId + " AND verseId = 0;");
+        } else {
+            sql = sql.concat(" AND verseId = " + verseId + ";");
+        }
+
+        Vector<Notes> notes = new Vector<>();
+
+        ResultSet resultSet = statement.executeQuery(sql);
+
+        while (resultSet.next()) {
+            Notes note = new Notes();
+
+            note.setNoteId(resultSet.getLong("noteId"));
+            note.setBibleId(resultSet.getLong("bibleId"));
+            note.setBookId(resultSet.getLong("bookId"));
+            note.setChapterId(resultSet.getLong("chapterId"));
+            note.setVerseId(resultSet.getLong("verseId"));
+            note.setNoteText(resultSet.getString("noteText"));
+
+            notes.add(note);
+        }
+
+        return notes;
+    }
+
     public int writeToNotes(Notes notes) throws Exception {
         Statement statement = conn.createStatement();
         String sql = "INSERT INTO Notes (noteId, bibleId, bookId, chapterId, verseId, noteText)" +
@@ -414,6 +463,24 @@ public class DatabaseConnection {
         Statement statement = conn.createStatement();
         String sql = "SELECT DISTINCT w.word, w.wordId FROM Reference AS r LEFT JOIN Words AS w ON r.wordId = w.wordId WHERE " +
                 "bookId = " + bookId + " AND chapterId = " + chapterId + ";";
+
+        Vector<Word> words = new Vector<>();
+        ResultSet resultSet = statement.executeQuery(sql);
+
+        while (resultSet.next()) {
+            Word word = new Word();
+            word.setWordId(resultSet.getLong("wordId"));
+            word.setWord(resultSet.getString("word"));
+            words.add(word);
+        }
+
+        return words;
+    }
+
+    public Vector<Word> getWordByCitation(Long bookId, Long chapterId, Long verseId) throws Exception {
+        Statement statement = conn.createStatement();
+        String sql = "SELECT DISTINCT w.word, w.wordId FROM Reference AS r LEFT JOIN Words AS w ON r.wordId = w.wordId WHERE " +
+                "bookId = " + bookId + " AND chapterId = " + chapterId + " AND verseNumber = " + verseId + ";";
 
         Vector<Word> words = new Vector<>();
         ResultSet resultSet = statement.executeQuery(sql);

@@ -1,9 +1,16 @@
 package main.java.Views;
 
 import main.java.Data.BibleLink;
+import main.java.Data.Indexes;
+import main.java.Data.Notes;
+import main.java.Service.BibleHTMLDocument;
 import main.java.Service.DatabaseConnection;
+import org.jsoup.internal.StringUtil;
+import org.sqlite.util.StringUtils;
+
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
+import javax.swing.event.HyperlinkEvent;
 import javax.swing.text.DefaultHighlighter;
 import javax.swing.text.Highlighter;
 import javax.swing.text.html.HTMLDocument;
@@ -11,21 +18,31 @@ import javax.swing.text.html.HTMLEditorKit;
 import java.awt.*;
 import java.io.Reader;
 import java.io.StringReader;
+import java.util.ArrayList;
 import java.util.Vector;
 
 public class ReaderPanel extends JPanel {
 
     private Application parentFrame;
     private Vector<BibleLink> bibleLinks = new Vector<>();
+    private ArrayList<Long> expandedRef = new ArrayList<>();
+    private ArrayList<String> expandedWords = new ArrayList<>();
+    private boolean showInlineNotes = false;
+    private boolean showInlineRef = false;
+    private BibleHTMLDocument doc;
     private final Long bibleId;
     private FooterToolBar footerToolBar;
     private JTextPane textArea = new JTextPane();
+    private JScrollPane pane;
     private int textSize;
 
-    public ReaderPanel(Application parentFrame, int textSize, Long bibleId, Long bookId, Long chapterId) {
+    public ReaderPanel(Application parentFrame, int textSize, Long bibleId, Long bookId, Long chapterId,
+                       boolean showInlineNotes, boolean showInlineRef) {
         this.parentFrame = parentFrame;
         this.textSize = textSize;
         this.bibleId = bibleId;
+        this.showInlineNotes = showInlineNotes;
+        this.showInlineRef = showInlineRef;
         BorderLayout layout = new BorderLayout();
         this.setLayout(layout);
         this.setBorder(new EmptyBorder(10,10,10,10));
@@ -50,10 +67,87 @@ public class ReaderPanel extends JPanel {
     }
 
     private void scrollPane() {
+        doc = new BibleHTMLDocument(bibleLinks, textSize, showInlineNotes, showInlineRef, expandedRef, expandedWords);
         textArea.setContentType("text/html");
-        textArea.setDocument(createHTMLDocument());
+        textArea.setDocument(doc.createDocument());
         textArea.setEditable(false);
-        JScrollPane pane = new JScrollPane();
+        textArea.addHyperlinkListener(event -> {
+            if (event.getEventType() == HyperlinkEvent.EventType.ACTIVATED) {
+                String[] link = event.getDescription().split("-");
+                System.out.println(link[0] + " " + link[1]);
+                switch (link[0]) {
+                    case "ref": {
+                        if (expandedRef.contains(Long.parseLong(link[1]))) {
+                            expandedRef.remove(Long.parseLong(link[1]));
+                        } else {
+                            expandedRef.add(Long.parseLong(link[1]));
+                        }
+                        textArea.setDocument(doc.updateExpandedRef(expandedRef));
+                        try {
+                            String text = textArea.getDocument().getText(0, textArea.getDocument().getLength());
+                            textArea.setCaretPosition(link[1].equals("0") ? 0 : text.indexOf(link[1] + " "));
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                        break;
+                    }
+                    case "word": {
+                        if (expandedWords.contains(link[1])) {
+                            expandedWords.remove(link[1]);
+                        } else {
+                            expandedWords.add(link[1]);
+                        }
+                        textArea.setDocument(doc.updateExpandedWords(expandedWords));
+                        try {
+                            String text = textArea.getDocument().getText(0, textArea.getDocument().getLength());
+                            textArea.setCaretPosition(text.indexOf(link[1]));
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                        break;
+                    }
+                    case "cit": {
+                        expandedWords.clear();
+                        expandedRef.clear();
+                        setFieldsByReference(Long.parseLong(link[1]), Long.parseLong(link[2]), Long.parseLong(link[3]));
+                        break;
+                    }
+                    case "add": {
+                        addNote(Long.parseLong(link[1]),Long.parseLong(link[2]),Long.parseLong(link[3]),new Notes(), "");
+                        break;
+                    }
+                    case "Edit": {
+                        Notes note = new Notes();
+                        try {
+                            DatabaseConnection databaseConnection = new DatabaseConnection();
+                            note = databaseConnection.getNoteById(Long.parseLong(link[1]));
+                            databaseConnection.close();
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                        String html = "<HTML><head></head><body>" + note.getNoteText() + "</body></HTML>";
+                        addNote(note.getBookId(), note.getChapterId(), note.getVerseId(), note, html);
+                        break;
+                    }
+                    case "Delete": {
+                        try {
+                            DatabaseConnection databaseConnection = new DatabaseConnection();
+                            databaseConnection.deleteNotes(Long.parseLong(link[1]));
+                            databaseConnection.close();
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                        parentFrame.updateNotes(bibleId, bibleLinks.get(0).getBook().getBookNumber(), bibleLinks.get(0).getChapter().getChapterId());
+                        int caretPos = textArea.getCaretPosition();
+                        textArea.setDocument(doc.updatePage(bibleLinks));
+                        textArea.setCaretPosition(caretPos);
+                        break;
+                    }
+                    default: {}
+                }
+            }
+        });
+        pane = new JScrollPane();
         pane.setPreferredSize(this.getPreferredSize());
         pane.setViewportView(textArea);
         this.add(pane, BorderLayout.CENTER);
@@ -63,7 +157,8 @@ public class ReaderPanel extends JPanel {
         Highlighter highlighter = textArea.getHighlighter();
         highlighter.removeAllHighlights();
         getBibleLinks(bibleId, bookId, chapterId);
-        textArea.setDocument(createHTMLDocument());
+        textArea.setDocument(doc.updatePage(bibleLinks));
+        pane.getVerticalScrollBar().setValue(0);
         footerToolBar.updateBookAndChapter(bookId, chapterId);
         parentFrame.updateNotes(bibleId, bookId, chapterId);
         parentFrame.updateConcordance(bookId, chapterId);
@@ -72,16 +167,13 @@ public class ReaderPanel extends JPanel {
     public void setFieldsByReference(Long bookId, Long chapterId, Long verseNum) {
         Long nextVerse = verseNum + 1;
         getBibleLinks(bibleId, bookId, chapterId);
-        textArea.setDocument(createHTMLDocument());
+        textArea.setDocument(doc.updatePage(bibleLinks));
         Highlighter highlighter = textArea.getHighlighter();
         highlighter.removeAllHighlights();
         try {
             String text = textArea.getDocument().getText(0, textArea.getDocument().getLength());
-            textArea.setSelectionStart(text.indexOf(verseNum.toString(), text.lastIndexOf("\n")));
-            textArea.setSelectionEnd(
-                    text.indexOf(nextVerse.toString()) == -1 ? text.length() : text.indexOf(nextVerse.toString(),
-                            textArea.getSelectionStart())
-            );
+            textArea.setSelectionStart(text.indexOf(verseNum.toString() + " "));
+            textArea.setSelectionEnd(text.indexOf("\n", textArea.getSelectionStart()));
             highlighter.addHighlight(textArea.getSelectionStart(), textArea.getSelectionEnd(), new DefaultHighlighter.DefaultHighlightPainter(Color.ORANGE));
             textArea.setCaretPosition(textArea.getSelectionStart());
         } catch (Exception e) {
@@ -102,40 +194,9 @@ public class ReaderPanel extends JPanel {
         }
     }
 
-    private String createString() {
-        String text = "";
-        String HTML1 = "<HTML><H1 style=\"text-align:center; font-size:" + textSize * 1.5 +"px; margin:5px 5px 0px\">" + bibleLinks.get(0).getBook().getBookTitle() + "</H1>" +
-                "<H2 style=\"text-align:center;font-size:" + textSize + "px; margin: 5px 5px 0px 0px\">" + bibleLinks.get(0).getChapter().getDisplayName() + "</H2>" +
-                "<p style=font-size:" + textSize + "px>";
-        String HTML2 = "</p></div><HTML>";
-
-        text = text.concat(HTML1);
-        for (BibleLink bibleLink : bibleLinks) {
-            text = text.concat("<span class name=\"" + bibleLink.getVerse().getVerseNumber() + "\">"
-                    + bibleLink.getVerse().getVerseNumber() + " " + bibleLink.getVerse().getVerseText().trim() + "</span><br>");
-        }
-        text = text.concat(HTML2);
-
-        return text;
-    }
-
-    private HTMLDocument createHTMLDocument() {
-
-        Reader stringReader = new StringReader(createString());
-        HTMLEditorKit htmlKit = new HTMLEditorKit();
-        HTMLDocument htmlDoc = (HTMLDocument) htmlKit.createDefaultDocument();
-        try {
-            htmlKit.read(stringReader, htmlDoc, 0);
-        } catch (Exception e) {
-            JOptionPane.showMessageDialog(this, "There was an error creating document", "Error", JOptionPane.ERROR_MESSAGE);
-        }
-
-        return htmlDoc;
-    }
-
     public void setTextSize(int textSize) {
         this.textSize = textSize;
-        textArea.setDocument(createHTMLDocument());
+        textArea.setDocument(doc.setSize(textSize));
         parentFrame.setTextSize(textSize);
     }
 
@@ -151,5 +212,121 @@ public class ReaderPanel extends JPanel {
 
     public Long getBook() {
         return bibleLinks.get(0).getBook().getBookNumber();
+    }
+
+    public void toggleShowInlineRef() {
+        if (showInlineRef) {
+            showInlineRef = false;
+        } else {
+            showInlineRef = true;
+        }
+        textArea.setDocument(doc.setShowRef(showInlineRef));
+    }
+
+    public void toggleShowInlineNotes() {
+        if (showInlineNotes) {
+            showInlineNotes = false;
+        } else {
+            showInlineNotes = true;
+        }
+        textArea.setDocument(doc.setShowNotes(showInlineNotes));
+    }
+
+    public boolean getShowInlineRef() {
+        return showInlineRef;
+    }
+
+    public boolean getShowInlineNotes() {
+        return showInlineNotes;
+    }
+
+    private void addNote(Long bookId, Long chapterId, Long verseId, Notes note, String html) {
+        JDialog dialog = new JDialog();
+        dialog.setSize(new Dimension(600,400));
+        dialog.setLocationRelativeTo(parentFrame);
+
+        // Setup Panel
+        JPanel panel = new JPanel();
+        panel.setLayout(new BorderLayout());
+        panel.setBorder(new EmptyBorder(10,10,10,10));
+
+        // Editor Layout
+        TextEditor textEditor;
+        if (html.equals("")) {
+            textEditor = new TextEditor(textSize);
+            System.out.println("null");
+        } else {
+            textEditor = new TextEditor(textSize, html);
+        }
+        JScrollPane textScrollPane = new JScrollPane();
+        textScrollPane.setViewportView(textEditor);
+
+        // Button Layout
+        JPanel buttonPanel = new JPanel();
+        buttonPanel.setLayout(new BorderLayout());
+        JButton cancel = new JButton("Cancel");
+        cancel.addActionListener(e -> {
+            dialog.setVisible(false);
+            dialog.dispose();
+        });
+        JButton submit = new JButton("Submit");
+        submit.setBackground(Color.BLUE);
+        submit.setForeground(Color.WHITE);
+        submit.addActionListener(event -> {
+            if (note.getNoteId() == null) {
+                saveNote(textEditor.getText(), bookId, chapterId, verseId, note.getNoteId());
+            } else {
+                saveNote(textEditor.getText(), note.getBookId(), note.getChapterId(), note.getVerseId(), note.getNoteId());
+            }
+            dialog.setVisible(false);
+            dialog.dispose();
+        });
+
+        buttonPanel.add(cancel, BorderLayout.WEST);
+        buttonPanel.add(submit, BorderLayout.EAST);
+
+        panel.add(textEditor, BorderLayout.CENTER);
+        panel.add(buttonPanel, BorderLayout.SOUTH);
+        dialog.add(panel);
+        dialog.setVisible(true);
+    }
+
+    private void saveNote(String noteText, Long bookId, Long chapterId, Long associatedVerse, Long noteId) {
+        Notes note = new Notes();
+        Indexes indexes;
+        try {
+            DatabaseConnection databaseConnection = new DatabaseConnection();
+            indexes = databaseConnection.getIndex();
+
+            if (noteId == null) {
+                note.setNoteId(indexes.getNotesId() + 1);
+            } else {
+                note.setNoteId(noteId);
+            }
+            note.setBibleId(bibleId);
+            note.setBookId(bookId);
+            note.setChapterId(chapterId);
+            note.setVerseId(associatedVerse);
+            note.setNoteText(noteText);
+
+            if (noteId == null) {
+                indexes.setNotesId(indexes.getNotesId() + 1);
+                databaseConnection.writeIndexes(indexes);
+            }
+
+            if (noteId == null) {
+                databaseConnection.writeToNotes(note);
+            } else {
+                databaseConnection.updateNotes(note);
+            }
+
+            databaseConnection.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        int caretPos = textArea.getCaretPosition();
+        textArea.setDocument(doc.updatePage(bibleLinks));
+        textArea.setCaretPosition(caretPos);
+        parentFrame.updateNotes(bibleId, bookId, chapterId);
     }
 }
