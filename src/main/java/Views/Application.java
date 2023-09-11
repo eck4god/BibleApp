@@ -1,6 +1,5 @@
 package main.java.Views;
 import main.java.Data.Bible;
-import main.java.Data.BibleName;
 import main.java.Data.Materials;
 import main.java.Data.References;
 import main.java.Service.DatabaseConnection;
@@ -116,12 +115,12 @@ public class Application extends JFrame {
 
         // File Menu
         JMenu file = new JMenu("File");
-        JMenuItem importBible = new JMenuItem("Import Bible...");
-        importBible.addActionListener(e -> importDialog());
-        JMenuItem addConcordance = new JMenuItem("Add Reference...");
-        addConcordance.addActionListener(e -> importConcordanceDialog());
+        JMenuItem importBible = new JMenuItem("Manage Library...");
+        importBible.addActionListener(e -> {
+            ManageLibrary library = new ManageLibrary(this, bibles, materials);
+            library.setVisible(true);
+        });
         file.add(importBible);
-        file.add(addConcordance);
 
 
         if (!System.getProperty("os.name").equals("Mac OS X")) {
@@ -233,12 +232,16 @@ public class Application extends JFrame {
 
         // Import Button
         JButton importBook = new JButton();
-        importBook.setIcon(new ImageIcon(path + "/Resources/Icons/import.png"));
+        importBook.setIcon(new ImageIcon(path + "/Resources/Icons/library.png"));
         importBook.setPreferredSize(new Dimension(50, 50));
-        importBook.setToolTipText("Import a new Bible");
-        importBook.addActionListener(event -> importDialog());
+        importBook.setToolTipText("Manage Library");
+        importBook.addActionListener(event -> {
+            ManageLibrary library = new ManageLibrary(this, bibles, materials);
+            library.setVisible(true);
+        });
 
         toolBar.add(importBook);
+
         toolBar.setRollover(true);
         toolBar.setFloatable(false);
         this.getContentPane().add(toolBar, BorderLayout.NORTH);
@@ -248,7 +251,7 @@ public class Application extends JFrame {
         tabbedPane = new JTabbedPane();
         tabbedPane.addChangeListener(event -> {
             ReaderPanel temp = (ReaderPanel) tabbedPane.getSelectedComponent();
-            if (notesPanel != null) {
+            if (notesPanel != null && temp != null) {
                 updateNotes(temp.getBible(), temp.getBook(), temp.getChapter());
                 updateConcordance(temp.getBook(), temp.getChapter());
             }
@@ -319,8 +322,8 @@ public class Application extends JFrame {
         emptyPanel.add(label, BorderLayout.CENTER);
         // Sets tabbed pane to not show and displays empty message
         tabbedPane.setVisible(false);
-        splitPane.remove(tabbedPane);
-        splitPane.add(emptyPanel);
+        verticalSplitPane.remove(tabbedPane);
+        verticalSplitPane.add(emptyPanel);
     }
 
     private void createReferenceTabbedPane() {
@@ -341,7 +344,7 @@ public class Application extends JFrame {
         referencePane.addTab("Notes", notesPanel);
     }
 
-    private void createConcordanceTab() {
+    public void createConcordanceTab() {
         ReaderPanel readerPanel = (ReaderPanel) tabbedPane.getSelectedComponent();
         concordancePanel = new ConcordancePanel(this, textSize, readerPanel.getBook(), readerPanel.getChapter());
 
@@ -353,98 +356,16 @@ public class Application extends JFrame {
     }
 
     public void updateConcordance(Long bibleId, Long chapterId) {
-        concordancePanel.updateReference(bibleId, chapterId);
-    }
-
-    private void importDialog() {
-        JDialog jDialog = new JDialog(this, "Import Bible");
-        jDialog.setLayout(new BorderLayout());
-        jDialog.setSize(400, 150);
-        jDialog.setResizable(false);
-        jDialog.setLocation((this.getWidth() / 2) + this.getX() - 200, (this.getHeight() / 2) + this.getY() - 75);
-        createSelectFilePane(jDialog);
-        jDialog.setVisible(true);
-    }
-
-    private void createSelectFilePane(JDialog dialog) {
-        JButton uploadButton = new JButton("Upload");
-
-        // Selection Arrays
-        String language[] = {"English"};
-        Vector<String> installedBibles = new Vector<>();
-        for (Bible bible : bibles) {
-            installedBibles.add(bible.getBibleName());
+        if (concordancePanel != null) {
+            concordancePanel.updateReference(bibleId, chapterId);
         }
-        Vector<BibleName> bibleNames = new Vector<>();
-        for (BibleName bibleName : BibleName.values()) {
-            if (bibleName == BibleName.PLACEHOLDER) {
-                bibleNames.add(bibleName);
-            } else if (!installedBibles.contains(bibleName.toString())) {
-                bibleNames.add(bibleName);
-            }
-        }
-
-        // Language and Bible Drop-Downs
-        JPanel selectionPanel = new JPanel(new BorderLayout());
-        JPanel langPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
-        JPanel biblePanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
-        JLabel langLabel = new JLabel("Language");
-        JLabel bibleLabel = new JLabel("Bible");
-        JComboBox<String> langBox = new JComboBox<>();
-        for (String lang : language) {
-            langBox.addItem(lang);
-        }
-        JComboBox<BibleName> bibleBox = new JComboBox<>();
-        for (BibleName bible : bibleNames) {
-            bibleBox.addItem(bible);
-        }
-        bibleBox.addActionListener(event -> {
-            if (bibleBox.getSelectedItem() == BibleName.PLACEHOLDER) {
-                uploadButton.setEnabled(false);
-            } else {
-                selectedFile = new File(path + "/Resources/Bibles/" + bibleNames.get(bibleBox.getSelectedIndex()).toFileName());
-                uploadButton.setEnabled(true);
-            }
-        });
-
-        langPanel.add(langLabel);
-        langPanel.add(langBox);
-        biblePanel.add(bibleLabel);
-        biblePanel.add(bibleBox);
-        selectionPanel.add(langPanel, BorderLayout.NORTH);
-        selectionPanel.add(biblePanel, BorderLayout.SOUTH);
-
-        // panel for Buttons
-        JPanel buttonPanel = new JPanel();
-        buttonPanel.setLayout(new BorderLayout());
-        buttonPanel.setBorder(new EmptyBorder(10,10,10,10));
-        JButton cancelButton = new JButton("Cancel");
-        cancelButton.addActionListener(event -> {
-            dialog.setVisible(false);
-            dialog.dispose();
-        });
-        uploadButton.setEnabled(false);
-        uploadButton.setOpaque(true);
-        uploadButton.setBorderPainted(false);
-        uploadButton.setBackground(Color.BLUE);
-        uploadButton.setForeground(Color.WHITE);
-        uploadButton.addActionListener(event -> {
-            processUpload();
-            dialog.setVisible(false);
-            dialog.dispose();
-        });
-        buttonPanel.add(cancelButton, BorderLayout.WEST);
-        buttonPanel.add(uploadButton, BorderLayout.EAST);
-
-        dialog.getContentPane().add(selectionPanel, BorderLayout.NORTH);
-        dialog.getContentPane().add(buttonPanel, BorderLayout.SOUTH);
     }
 
     private void processUpload() {
         //  TO DO: Add logic to process uploaded file
         ProcessJSON processJSON = new ProcessJSON(selectedFile);
         try {
-            int complete = processJSON.saveBibleToDatabase(this);
+            int complete = processJSON.saveBibleToDatabase(null);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -548,8 +469,8 @@ public class Application extends JFrame {
             }
             if (tabbedPane.getTabCount() == 1) {
                 tabbedPane.setVisible(true);
-                splitPane.remove(emptyPanel);
-                splitPane.add(tabbedPane);
+                verticalSplitPane.remove(emptyPanel);
+                verticalSplitPane.add(tabbedPane);
             }
             tabbedPane.setSelectedIndex(tabbedPane.getTabCount() - 1);
             dialog.setVisible(false);
@@ -562,80 +483,6 @@ public class Application extends JFrame {
         panel.add(dropDownPanel, BorderLayout.CENTER);
         panel.add(buttonPanel, BorderLayout.SOUTH);
         dialog.add(panel);
-        dialog.setVisible(true);
-    }
-
-    private void importConcordanceDialog() {
-        JDialog dialog = new JDialog(this, "Add Reference Materials");
-        dialog.setLayout(new BorderLayout());
-        dialog.setSize(new Dimension(400 , 150));
-        dialog.setResizable(false);
-        dialog.setLocation((this.getWidth() / 2) + this.getX() - 200, (this.getHeight() / 2) + this.getY() - 75);
-
-        JPanel panel = new JPanel();
-        panel.setLayout(new BorderLayout());
-
-        JPanel layout = new JPanel();
-        layout.setLayout(new FlowLayout(FlowLayout.CENTER));
-
-        JPanel labelLayout = new JPanel();
-        labelLayout.setLayout(new FlowLayout(FlowLayout.CENTER));
-
-        JLabel label = new JLabel("Available Reference Materials");
-
-        JButton submitButton = new JButton("Submit");
-        submitButton.setEnabled(false);
-
-        Vector<References> references = new Vector<>();
-        for (References r : References.values()) {
-            references.add(r);
-        }
-        JComboBox<References> comboBox = new JComboBox<>();
-        for (References concordances : references) {
-            comboBox.addItem(concordances);
-        }
-        comboBox.addActionListener(event -> {
-            if (comboBox.getSelectedItem().equals(References.Placeholder)) {
-                submitButton.setEnabled(false);
-            } else {
-                submitButton.setEnabled(true);
-            }
-        });
-        labelLayout.add(label);
-        layout.add(comboBox);
-        panel.add(labelLayout, BorderLayout.NORTH);
-        panel.add(layout, BorderLayout.CENTER);
-
-        JPanel buttonPanel = new JPanel();
-        buttonPanel.setLayout(new BorderLayout());
-        buttonPanel.setBorder(new EmptyBorder(10,10,10,10));
-
-        JButton cancelButton = new JButton("Cancel");
-        cancelButton.addActionListener(e -> {
-            dialog.setVisible(false);
-            dialog.dispose();
-        });
-
-        submitButton.setBackground(Color.BLUE);
-        submitButton.setForeground(Color.WHITE);
-        submitButton.addActionListener(event -> {
-            ProcessJSON processJSON = new ProcessJSON(references.get(comboBox.getSelectedIndex()).toFiles());
-            try {
-                dialog.setVisible(false);
-                dialog.dispose();
-                processJSON.addConcordance(this, comboBox.getSelectedItem().toString());
-            } catch (Exception e) {
-                e.printStackTrace();
-                JOptionPane.showMessageDialog(this,"Error loading files", "Error", JOptionPane.ERROR_MESSAGE);
-            }
-            createConcordanceTab();
-        });
-
-        buttonPanel.add(cancelButton, BorderLayout.WEST);
-        buttonPanel.add(submitButton, BorderLayout.EAST);
-
-        dialog.add(panel, BorderLayout.NORTH);
-        dialog.add(buttonPanel, BorderLayout.SOUTH);
         dialog.setVisible(true);
     }
 

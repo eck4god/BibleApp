@@ -70,7 +70,7 @@ public class BibleApp {
                 dbComplete = connection.setUpDatabase();
                 connection.close();
                 ProcessJSON processJSON = new ProcessJSON(new File(path + "/Resources/Bibles/kjv.Json"));
-                int complete = processJSON.saveBibleToDatabase(welcomeScreen);
+                int complete = processJSON.saveBibleToDatabase(null);
                 config.setFirstRun();
             } catch (Exception e) {
                 JOptionPane.showMessageDialog(welcomeScreen, "There was and error setting up data structure", "System Error", JOptionPane.ERROR_MESSAGE);
