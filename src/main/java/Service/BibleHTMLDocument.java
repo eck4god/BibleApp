@@ -13,6 +13,7 @@ import java.util.Vector;
 public class BibleHTMLDocument extends HTMLDocument {
 
     private final String path;
+    private Materials materials;
     private Vector<BibleLink> bibleLinks;
     private ArrayList<Long> expandedRef;
     private ArrayList<String> expandedWords;
@@ -21,13 +22,14 @@ public class BibleHTMLDocument extends HTMLDocument {
     private int textSize;
 
     public BibleHTMLDocument(Vector<BibleLink> bibleLinks, int textSize, boolean showNotes, boolean showRef,
-                             ArrayList<Long> expandedRef, ArrayList<String> expandedWords) {
+                             ArrayList<Long> expandedRef, ArrayList<String> expandedWords, Materials materials) {
         this.bibleLinks = bibleLinks;
         this.textSize = textSize;
         this.showRef = showRef;
         this.showNotes = showNotes;
         this.expandedRef = expandedRef;
         this.expandedWords = expandedWords;
+        this.materials = materials;
         ProgramDirectoryService programDirectoryService = new ProgramDirectoryService();
         path = programDirectoryService.getProgramDirectory();
     }
@@ -65,7 +67,7 @@ public class BibleHTMLDocument extends HTMLDocument {
             Vector<Word> words = new Vector<>();
             try {
                 DatabaseConnection databaseConnection = new DatabaseConnection();
-                words = databaseConnection.getWordByCitation(bibleLinks.get(0).getBook().getBookNumber(), bibleLinks.get(0).getChapter().getChapterId(), 0L);
+                words = databaseConnection.getWordByCitation(materials.getMaterialsId(), bibleLinks.get(0).getBook().getBookNumber(), bibleLinks.get(0).getChapter().getChapterId(), 0L);
                 databaseConnection.close();
             } catch (Exception e) {
                 e.printStackTrace();
@@ -136,7 +138,7 @@ public class BibleHTMLDocument extends HTMLDocument {
                 Vector<Word> words = new Vector<>();
                 try {
                     DatabaseConnection databaseConnection = new DatabaseConnection();
-                    words = databaseConnection.getWordByCitation(bibleLink.getBook().getBookNumber(), bibleLink.getChapter().getChapterId(),
+                    words = databaseConnection.getWordByCitation(materials.getMaterialsId(), bibleLink.getBook().getBookNumber(), bibleLink.getChapter().getChapterId(),
                             Long.parseLong(bibleLink.getVerse().getVerseNumber()));
                     databaseConnection.close();
                 } catch (Exception e) {

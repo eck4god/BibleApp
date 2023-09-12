@@ -1,5 +1,6 @@
 package main.java.Views;
 
+import main.java.Data.Materials;
 import main.java.Data.Word;
 import main.java.Service.ConcordanceHTMLDocument;
 import main.java.Service.DatabaseConnection;
@@ -21,6 +22,7 @@ import java.util.stream.Collectors;
 public class ConcordanceWindow extends JFrame {
 
     private Application application;
+    private Materials materials;
     private final String path;
     private int textSize;
     private int startIndex = 0;
@@ -38,8 +40,9 @@ public class ConcordanceWindow extends JFrame {
     private Vector<Word> words;
 
 
-    public ConcordanceWindow(Application application, int textSize) {
+    public ConcordanceWindow(Application application, Materials materials, int textSize) {
         this.application = application;
+        this.materials = materials;
         this.textSize = textSize;
         this.setDefaultCloseOperation(DISPOSE_ON_CLOSE);
         this.setMinimumSize(new Dimension(1004,768));
@@ -85,6 +88,7 @@ public class ConcordanceWindow extends JFrame {
                 if (words.isEmpty() || totalCount <= batchSize || startIndex + batchSize >= totalCount) {
                     nextButton.setEnabled(false);
                 }
+                prevButton.setEnabled(false);
                 textPane.setDocument(htmlDocument.updatePage(words));
                 pane.getVerticalScrollBar().setValue(0);
             }
@@ -139,7 +143,7 @@ public class ConcordanceWindow extends JFrame {
                     search = createLetters().get(createLetters().indexOf(search) - 1);
                     try {
                         DatabaseConnection databaseConnection = new DatabaseConnection();
-                        totalCount = databaseConnection.getTotalCountOfPagedWordByString(search);
+                        totalCount = databaseConnection.getTotalCountOfPagedWordByString(search, materials.getMaterialsId());
                         databaseConnection.close();
                     } catch (Exception e) {
                         e.printStackTrace();
@@ -256,7 +260,7 @@ public class ConcordanceWindow extends JFrame {
             Vector<Word> w = new Vector<>();
             try {
                 DatabaseConnection databaseConnection = new DatabaseConnection();
-                w = databaseConnection.getWordByString(letter);
+                w = databaseConnection.getWordByString(letter, materials.getMaterialsId());
                 databaseConnection.close();
             } catch (Exception e) {
                 e.printStackTrace();
@@ -329,8 +333,8 @@ public class ConcordanceWindow extends JFrame {
     private void getWords(String s) {
         try {
             DatabaseConnection databaseConnection = new DatabaseConnection();
-            words = databaseConnection.getPagedWordByString(s, startIndex, batchSize);
-            totalCount = databaseConnection.getTotalCountOfPagedWordByString(s);
+            words = databaseConnection.getPagedWordByString(s, materials.getMaterialsId(), startIndex, batchSize);
+            totalCount = databaseConnection.getTotalCountOfPagedWordByString(s, materials.getMaterialsId());
             databaseConnection.close();
         } catch (Exception e) {
             e.printStackTrace();

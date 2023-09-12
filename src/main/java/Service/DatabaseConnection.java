@@ -272,11 +272,33 @@ public class DatabaseConnection {
             bibleLink.setBook(book);
             bibleLink.setChapter(chapter);
             bibleLink.setVerse(verse);
+            bibleLink.setBibleLinkId(resultSet.getLong("bibleLinkId"));
 
             bibleLinks.add(bibleLink);
         }
 
         return bibleLinks;
+    }
+
+    public void deleteVerse(Long verseId) throws Exception {
+        Statement statement = conn.createStatement();
+        String sql = "DELETE FROM verses WHERE verseId = " + verseId + ";";
+
+        statement.execute(sql);
+    }
+
+    public void deleteBibleLink(Long bibleLinkId) throws Exception {
+        Statement statement = conn.createStatement();
+        String sql = "DELETE FROM bibleLink WHERE bibleLinkId = " + bibleLinkId + ";";
+
+        statement.execute(sql);
+    }
+
+    public void deleteBible(Long bibleId) throws Exception {
+        Statement statement = conn.createStatement();
+        String sql = "DELETE FROM bible WHERE bibleId = " + bibleId + ";";
+
+        statement.execute(sql);
     }
 
     public Vector<Notes> getNotes(Long bibleId, Long bookId, Long chapterId) throws Exception {
@@ -384,8 +406,8 @@ public class DatabaseConnection {
 
     public void writeToWords(Word word) throws Exception {
         Statement statement = conn.createStatement();
-        String sql = "INSERT INTO Words (wordId, word) VALUES (" +
-                word.getWordId() + ", '" + word.getWord() + "');";
+        String sql = "INSERT INTO Words (wordId, word, materialsId) VALUES (" +
+                word.getWordId() + ", '" + word.getWord() + "', " + word.getMaterialId() + ");";
 
         statement.execute(sql);
     }
@@ -406,9 +428,9 @@ public class DatabaseConnection {
         statement.execute(sql);
     }
 
-    public Vector<Word> getWordByString(String search) throws Exception {
+    public Vector<Word> getWordByString(String search, Long materialsId) throws Exception {
         Statement statement = conn.createStatement();
-        String sql = "SELECT * FROM Words WHERE word LIKE '" + search + "%';";
+        String sql = "SELECT * FROM Words WHERE word LIKE '" + search + "%' AND materialsId =" + materialsId + ";";
 
         Vector<Word> words = new Vector<>();
 
@@ -425,9 +447,9 @@ public class DatabaseConnection {
         return words;
     }
 
-    public int getTotalCountOfPagedWordByString(String search) throws Exception {
+    public int getTotalCountOfPagedWordByString(String search, Long materialsId) throws Exception {
         Statement statement = conn.createStatement();
-        String sql = "SELECT COUNT(*) AS count FROM Words WHERE word LIKE '" + search + "%';";
+        String sql = "SELECT COUNT(*) AS count FROM Words WHERE word LIKE '" + search + "%' AND materialsId =" + materialsId + ";";
 
         ResultSet resultSet = statement.executeQuery(sql);
 
@@ -439,9 +461,9 @@ public class DatabaseConnection {
         return count;
     }
 
-    public Vector<Word> getPagedWordByString(String search, int startIndex, int batchSize) throws Exception {
+    public Vector<Word> getPagedWordByString(String search, Long materialsId, int startIndex, int batchSize) throws Exception {
         Statement statement = conn.createStatement();
-        String sql = "SELECT * FROM Words WHERE word LIKE '" + search + "%' LIMIT " +
+        String sql = "SELECT * FROM Words WHERE word LIKE '" + search + "%' AND materialsId =" + materialsId + " LIMIT " +
                 batchSize + " OFFSET " + startIndex + ";";
 
         Vector<Word> words = new Vector<>();
@@ -459,10 +481,10 @@ public class DatabaseConnection {
         return words;
     }
 
-    public Vector<Word> getWordByReference(Long bookId, Long chapterId) throws Exception {
+    public Vector<Word> getWordByReference(Long materialsId, Long bookId, Long chapterId) throws Exception {
         Statement statement = conn.createStatement();
         String sql = "SELECT DISTINCT w.word, w.wordId FROM Reference AS r LEFT JOIN Words AS w ON r.wordId = w.wordId WHERE " +
-                "bookId = " + bookId + " AND chapterId = " + chapterId + ";";
+                "bookId = " + bookId + " AND chapterId = " + chapterId + " AND materialsId = " + materialsId + ";";
 
         Vector<Word> words = new Vector<>();
         ResultSet resultSet = statement.executeQuery(sql);
@@ -477,10 +499,11 @@ public class DatabaseConnection {
         return words;
     }
 
-    public Vector<Word> getWordByCitation(Long bookId, Long chapterId, Long verseId) throws Exception {
+    public Vector<Word> getWordByCitation(Long materialsId, Long bookId, Long chapterId, Long verseId) throws Exception {
         Statement statement = conn.createStatement();
         String sql = "SELECT DISTINCT w.word, w.wordId FROM Reference AS r LEFT JOIN Words AS w ON r.wordId = w.wordId WHERE " +
-                "bookId = " + bookId + " AND chapterId = " + chapterId + " AND verseNumber = " + verseId + ";";
+                "bookId = " + bookId + " AND chapterId = " + chapterId + " AND verseNumber = " + verseId + " AND materialsId = " +
+                materialsId + ";";
 
         Vector<Word> words = new Vector<>();
         ResultSet resultSet = statement.executeQuery(sql);
@@ -519,6 +542,20 @@ public class DatabaseConnection {
         return references;
     }
 
+    public void deleteReference(Long referenceId) throws Exception {
+        Statement statement = conn.createStatement();
+        String sql = "DELETE FROM reference WHERE referenceId = " + referenceId + ";";
+
+        statement.execute(sql);
+    }
+
+    public void deleteWord(Long wordId) throws Exception {
+        Statement statement = conn.createStatement();
+        String sql = "DELETE FROM words WHERE wordId = " + wordId + ";";
+
+        statement.execute(sql);
+    }
+
     public void writeToMaterials(Materials materials) throws Exception {
         Statement statement = conn.createStatement();
         String sql = "INSERT INTO Materials (materialsId, name) VALUES (" +
@@ -542,5 +579,12 @@ public class DatabaseConnection {
         }
 
         return materials;
+    }
+
+    public void deleteMaterials(Long materialsId) throws Exception {
+        Statement statement = conn.createStatement();
+        String sql = "DELETE FROM materials WHERE materialsId = " + materialsId + ";";
+
+        statement.execute(sql);
     }
 }

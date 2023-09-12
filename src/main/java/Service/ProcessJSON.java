@@ -64,12 +64,12 @@ public class ProcessJSON {
         jsonObject.clear();
     }
 
-    public int saveBibleToDatabase(JFrame parentFrame) throws Exception {
+    public int saveBibleToDatabase(JDialog dialog) throws Exception {
         // Progress bar frame
-        JDialog jDialog = new JDialog(parentFrame, "Loading Bible", Dialog.ModalityType.APPLICATION_MODAL);
+        JDialog jDialog = new JDialog(dialog, "Loading Bible", Dialog.ModalityType.APPLICATION_MODAL);
         jDialog.setLayout(new BorderLayout());
         jDialog.setSize(400,100);
-        jDialog.setLocation(parentFrame.getWidth() / 2 + parentFrame.getX() - 200, parentFrame.getHeight() / 2 + parentFrame.getY() - 50);
+        jDialog.setLocationRelativeTo(dialog);
         JLabel label = new JLabel("Loading...");
         label.setFont(new Font(Font.DIALOG, Font.BOLD, 18));
         label.setAlignmentX(Component.CENTER_ALIGNMENT);
@@ -171,12 +171,12 @@ public class ProcessJSON {
         return 0;
     }
 
-    public int addConcordance(JFrame parentFrame, String label) throws Exception {
+    public int addConcordance(JDialog parentFrame, String label) throws Exception {
         // Dialog box for progress bar
         JDialog dialog = new JDialog(parentFrame, "Adding " + label, Dialog.ModalityType.APPLICATION_MODAL);
         dialog.setLayout(new BorderLayout());
-        dialog.setSize(new Dimension(400, 200));
-        dialog.setLocation((parentFrame.getWidth() / 2) + parentFrame.getX() - 200, (parentFrame.getHeight() / 2) + parentFrame.getY() / 100);
+        dialog.setSize(new Dimension(400, 150));
+        dialog.setLocationRelativeTo(parentFrame);
 
         // Label and progress bars
         JPanel filePanel = new JPanel();
@@ -190,7 +190,7 @@ public class ProcessJSON {
         fileProgress.setStringPainted(true);
         fileProgress.setValue(0);
         filePanel.add(fileLabel, BorderLayout.NORTH);
-        filePanel.add(fileProgress, BorderLayout.SOUTH);
+        filePanel.add(fileProgress, BorderLayout.CENTER);
 
         JPanel overallPanel = new JPanel();
         overallPanel.setLayout(new BorderLayout());
@@ -240,6 +240,7 @@ public class ProcessJSON {
                         Word w = new Word();
                         w.setWordId(indexes.getWordId() + 1);
                         w.setWord(word.get("Word").toString());
+                        w.setMaterialId(materials.getMaterialsId());
                         indexes.setWordId(indexes.getWordId() + 1);
                         publish(new Progress(w.getWord(), n, i, files.size(), words.size()));
 
@@ -485,9 +486,5 @@ public class ProcessJSON {
         boolean isVisible = (boolean) jsonObject.get("refPaneVisible");
         jsonObject.clear();
         return isVisible;
-    }
-
-    private Class Progress(String label, int overall, int inner) {
-        return Progress(label, overall, inner);
     }
 }
