@@ -68,22 +68,29 @@ public class ProcessJSON {
         // Progress bar frame
         JDialog jDialog = new JDialog(dialog, "Loading Bible", Dialog.ModalityType.APPLICATION_MODAL);
         jDialog.setLayout(new BorderLayout());
-        jDialog.setSize(400,100);
+        jDialog.setSize(400,85);
         jDialog.setLocationRelativeTo(dialog);
+
+        // Setup Progess bars
+        JPanel panel = new JPanel();
+        panel.setLayout(new BorderLayout());
         JLabel label = new JLabel("Loading...");
         label.setFont(new Font(Font.DIALOG, Font.BOLD, 18));
         label.setAlignmentX(Component.CENTER_ALIGNMENT);
-        JPanel labelPanel = new JPanel();
-        labelPanel.add(label);
         JProgressBar progressBar = new JProgressBar();
         progressBar.setAlignmentX(Component.CENTER_ALIGNMENT);
         progressBar.setVisible(true);
         progressBar.setStringPainted(true);
         progressBar.setValue(0);
-        JPanel barPanel = new JPanel();
-        barPanel.add(progressBar);
-        jDialog.getContentPane().add(labelPanel, BorderLayout.NORTH);
-        jDialog.getContentPane().add(barPanel, BorderLayout.CENTER);
+        panel.add(label, BorderLayout.NORTH);
+        panel.add(progressBar, BorderLayout.CENTER);
+
+        JPanel layout = new JPanel();
+        layout.setLayout(new BorderLayout());
+        layout.setBorder(new EmptyBorder(10,10,10,10));
+        layout.add(panel, BorderLayout.CENTER);
+
+        jDialog.add(layout, BorderLayout.CENTER);
 
         // Processing of JSON file
         JSONParser parser = new JSONParser();
@@ -91,8 +98,8 @@ public class ProcessJSON {
         JSONObject jsonObject = (JSONObject) object;
         JSONObject metaData = (JSONObject) jsonObject.get("metadata");
         JSONArray verseData = (JSONArray) jsonObject.get("verses");
+        label.setText(metaData.get("name").toString());
         progressBar.setMaximum(verseData.size());
-//        jDialog.setVisible(true);
 
         // Access Database and Save Data
         DatabaseConnection databaseConnection = new DatabaseConnection();
