@@ -175,7 +175,7 @@ public class ProcessJSON {
         // Dialog box for progress bar
         JDialog dialog = new JDialog(parentFrame, "Adding " + label, Dialog.ModalityType.APPLICATION_MODAL);
         dialog.setLayout(new BorderLayout());
-        dialog.setSize(new Dimension(400, 200));
+        dialog.setSize(new Dimension(400, 150));
         dialog.setLocationRelativeTo(parentFrame);
 
         // Label and progress bars
@@ -190,7 +190,7 @@ public class ProcessJSON {
         fileProgress.setStringPainted(true);
         fileProgress.setValue(0);
         filePanel.add(fileLabel, BorderLayout.NORTH);
-        filePanel.add(fileProgress, BorderLayout.SOUTH);
+        filePanel.add(fileProgress, BorderLayout.CENTER);
 
         JPanel overallPanel = new JPanel();
         overallPanel.setLayout(new BorderLayout());
@@ -240,6 +240,7 @@ public class ProcessJSON {
                         Word w = new Word();
                         w.setWordId(indexes.getWordId() + 1);
                         w.setWord(word.get("Word").toString());
+                        w.setMaterialId(materials.getMaterialsId());
                         indexes.setWordId(indexes.getWordId() + 1);
                         publish(new Progress(w.getWord(), n, i, files.size(), words.size()));
 
@@ -485,9 +486,5 @@ public class ProcessJSON {
         boolean isVisible = (boolean) jsonObject.get("refPaneVisible");
         jsonObject.clear();
         return isVisible;
-    }
-
-    private Class Progress(String label, int overall, int inner) {
-        return Progress(label, overall, inner);
     }
 }

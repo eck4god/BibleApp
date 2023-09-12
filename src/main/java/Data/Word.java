@@ -4,6 +4,7 @@ public class Word {
 
     private Long wordId;
     private String word;
+    private Long materialId;
 
     public Long getWordId() {
         return wordId;
@@ -19,5 +20,13 @@ public class Word {
 
     public void setWord(String word) {
         this.word = word;
+    }
+
+    public Long getMaterialId() {
+        return materialId;
+    }
+
+    public void setMaterialId(Long materialId) {
+        this.materialId = materialId;
     }
 }

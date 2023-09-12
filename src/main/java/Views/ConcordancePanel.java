@@ -1,5 +1,6 @@
 package main.java.Views;
 
+import main.java.Data.Materials;
 import main.java.Data.Word;
 import main.java.Service.ConcordanceHTMLDocument;
 import main.java.Service.DatabaseConnection;
@@ -21,6 +22,7 @@ public class ConcordancePanel extends JPanel {
     private Long bookId;
     private Long chapterId;
     private Application application;
+    private Materials materials;
     private JTextPane textPane;
     private JScrollPane pane;
     private JTextField searchField;
@@ -31,8 +33,9 @@ public class ConcordancePanel extends JPanel {
     private int textSize;
     private int scrollPos;
 
-    public ConcordancePanel(Application application, int textSize, Long bookId, Long chapterId) {
+    public ConcordancePanel(Application application, Materials materials, int textSize, Long bookId, Long chapterId) {
         this.application = application;
+        this.materials = materials;
         this.textSize = textSize;
         this.bookId = bookId;
         this.chapterId = chapterId;
@@ -97,7 +100,7 @@ public class ConcordancePanel extends JPanel {
         buttonPanel.setLayout(new FlowLayout(FlowLayout.LEFT));
         JButton openButton = new JButton("Open Concordance");
         openButton.addActionListener(e -> {
-            ConcordanceWindow concordanceWindow = new ConcordanceWindow(application, textSize);
+            ConcordanceWindow concordanceWindow = new ConcordanceWindow(application, materials, textSize);
             concordanceWindow.setVisible(true);
         });
 
@@ -170,8 +173,8 @@ public class ConcordancePanel extends JPanel {
     private void getWords(String search) {
         try {
             DatabaseConnection databaseConnection = new DatabaseConnection();
-            int totalCount = databaseConnection.getTotalCountOfPagedWordByString(search);
-            words = databaseConnection.getPagedWordByString(search, 0, totalCount);
+            int totalCount = databaseConnection.getTotalCountOfPagedWordByString(search, materials.getMaterialsId());
+            words = databaseConnection.getPagedWordByString(search, materials.getMaterialsId(), 0, totalCount);
             databaseConnection.close();
         } catch (Exception e) {
             e.printStackTrace();
@@ -181,7 +184,7 @@ public class ConcordancePanel extends JPanel {
     private void getWordsByReference() {
         try {
             DatabaseConnection databaseConnection = new DatabaseConnection();
-            words = databaseConnection.getWordByReference(bookId, chapterId);
+            words = databaseConnection.getWordByReference(materials.getMaterialsId(), bookId, chapterId);
             databaseConnection.close();
         } catch (Exception e) {
             e.printStackTrace();

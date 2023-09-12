@@ -287,7 +287,7 @@ public class Application extends JFrame {
 
     private void addReaderPane(Bible bible, Long bookId, Long chapterId, boolean showInlineNotes, boolean showInlineRef) {
         int index = tabbedPane.getTabCount();
-        ReaderPanel readerPanel = new ReaderPanel(this, textSize, bible.getBibleId(), bookId, chapterId, showInlineNotes, showInlineRef);
+        ReaderPanel readerPanel = new ReaderPanel(this, textSize, bible.getBibleId(), bookId, chapterId, showInlineNotes, showInlineRef, materials);
 
         // Creates Tab Label and close button
         JPanel tabPanel = new JPanel();
@@ -332,7 +332,7 @@ public class Application extends JFrame {
         createNotesTab();
         for (Materials material : materials) {
             if (material.getName().equals(References.Strongs.toString())) {
-                createConcordanceTab();
+                createConcordanceTab(material);
             }
         }
     }
@@ -344,9 +344,9 @@ public class Application extends JFrame {
         referencePane.addTab("Notes", notesPanel);
     }
 
-    public void createConcordanceTab() {
+    public void createConcordanceTab(Materials materials) {
         ReaderPanel readerPanel = (ReaderPanel) tabbedPane.getSelectedComponent();
-        concordancePanel = new ConcordancePanel(this, textSize, readerPanel.getBook(), readerPanel.getChapter());
+        concordancePanel = new ConcordancePanel(this, materials, textSize, readerPanel.getBook(), readerPanel.getChapter());
 
         referencePane.addTab("Concordance", concordancePanel);
     }
@@ -359,18 +359,6 @@ public class Application extends JFrame {
         if (concordancePanel != null) {
             concordancePanel.updateReference(bibleId, chapterId);
         }
-    }
-
-    private void processUpload() {
-        //  TO DO: Add logic to process uploaded file
-        ProcessJSON processJSON = new ProcessJSON(selectedFile);
-        try {
-            int complete = processJSON.saveBibleToDatabase(null);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        getBibles();
     }
 
     public void navigateTo(Long book, Long chapter) {
@@ -484,6 +472,20 @@ public class Application extends JFrame {
         panel.add(buttonPanel, BorderLayout.SOUTH);
         dialog.add(panel);
         dialog.setVisible(true);
+    }
+
+    public void removeConcordancePane() {
+        referencePane.remove(concordancePanel);
+    }
+
+    public void removeReaderPanelTab(Long bibleId) {
+        int tabCount = tabbedPane.getTabCount();
+        for (int i = tabCount - 1; i >= 0; i--) {
+            ReaderPanel readerPanel = (ReaderPanel) tabbedPane.getComponentAt(i);
+            if (readerPanel.getBible() == bibleId) {
+                tabbedPane.removeTabAt(i);
+            }
+        }
     }
 
     private void performQuit() {

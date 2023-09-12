@@ -1,29 +1,21 @@
 package main.java.Views;
 
-import main.java.Data.BibleLink;
-import main.java.Data.Indexes;
-import main.java.Data.Notes;
+import main.java.Data.*;
 import main.java.Service.BibleHTMLDocument;
 import main.java.Service.DatabaseConnection;
-import org.jsoup.internal.StringUtil;
-import org.sqlite.util.StringUtils;
-
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.event.HyperlinkEvent;
 import javax.swing.text.DefaultHighlighter;
 import javax.swing.text.Highlighter;
-import javax.swing.text.html.HTMLDocument;
-import javax.swing.text.html.HTMLEditorKit;
 import java.awt.*;
-import java.io.Reader;
-import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Vector;
 
 public class ReaderPanel extends JPanel {
 
     private Application parentFrame;
+    private Vector<Materials> materials;
     private Vector<BibleLink> bibleLinks = new Vector<>();
     private ArrayList<Long> expandedRef = new ArrayList<>();
     private ArrayList<String> expandedWords = new ArrayList<>();
@@ -37,12 +29,13 @@ public class ReaderPanel extends JPanel {
     private int textSize;
 
     public ReaderPanel(Application parentFrame, int textSize, Long bibleId, Long bookId, Long chapterId,
-                       boolean showInlineNotes, boolean showInlineRef) {
+                       boolean showInlineNotes, boolean showInlineRefm, Vector<Materials> materials) {
         this.parentFrame = parentFrame;
         this.textSize = textSize;
         this.bibleId = bibleId;
         this.showInlineNotes = showInlineNotes;
         this.showInlineRef = showInlineRef;
+        this.materials = materials;
         BorderLayout layout = new BorderLayout();
         this.setLayout(layout);
         this.setBorder(new EmptyBorder(10,10,10,10));
@@ -67,7 +60,13 @@ public class ReaderPanel extends JPanel {
     }
 
     private void scrollPane() {
-        doc = new BibleHTMLDocument(bibleLinks, textSize, showInlineNotes, showInlineRef, expandedRef, expandedWords);
+        Materials concordance = new Materials();
+        for (Materials m : materials) {
+            if (m.getName().equals(References.Strongs.toString())) {
+                concordance = m;
+            }
+        }
+        doc = new BibleHTMLDocument(bibleLinks, textSize, showInlineNotes, showInlineRef, expandedRef, expandedWords, concordance);
         textArea.setContentType("text/html");
         textArea.setDocument(doc.createDocument());
         textArea.setEditable(false);

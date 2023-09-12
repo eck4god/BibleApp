@@ -4,10 +4,14 @@ import main.java.Data.*;
 import main.java.Service.DatabaseConnection;
 import main.java.Service.ProcessJSON;
 import main.java.Service.ProgramDirectoryService;
+import main.java.Service.Progress;
 
 import javax.swing.*;
+import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Vector;
 
 public class ManageLibrary extends JDialog {
@@ -145,7 +149,12 @@ public class ManageLibrary extends JDialog {
                 JOptionPane.showMessageDialog(this, "At least one Bible must be installed",
                         "Unable to Remove", JOptionPane.ERROR_MESSAGE);
             } else {
-                JOptionPane.showMessageDialog(this, "This feature is not set up", "Remove Bible", JOptionPane.QUESTION_MESSAGE);
+                Bible b = (Bible) installedList.getSelectedValue();
+                int answer = JOptionPane.showConfirmDialog(this, "Are you sure you want to remove " + b.getBibleName(),
+                        "Are You Sure", JOptionPane.YES_NO_OPTION);
+                if (answer == 0) {
+                    removeBible(b);
+                }
             }
             installedList.clearSelection();
             updateBibles();
@@ -238,7 +247,7 @@ public class ManageLibrary extends JDialog {
         addButton.setEnabled(false);
         addButton.addActionListener(event -> {
             References references = (References) availableResource.getSelectedValue();
-            int answer = JOptionPane.showConfirmDialog(this, "Are you sure you wnat to install " + references.toString(),
+            int answer = JOptionPane.showConfirmDialog(this, "Are you sure you want to install " + references.toString(),
                     references.toString(), JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
             if (answer == 0) {
                 ProcessJSON processJSON = new ProcessJSON(references.toFiles());
@@ -249,8 +258,18 @@ public class ManageLibrary extends JDialog {
                     JOptionPane.showMessageDialog(this, "There was a problem installing " + references.toString(),
                             "There was a problem", JOptionPane.ERROR_MESSAGE);
                 }
-                application.createConcordanceTab();
+                updateMaterials();
+                for (Materials material : installedResources) {
+                    if (material.getName().equals(availableResource.getSelectedValue().toString())) {
+                        application.createConcordanceTab(material);
+                    }
+                }
             }
+            availableResource.clearSelection();
+            updateMaterials();
+            buildAvailableResourceList();
+            installedResource.setListData(installedResources);
+            availableResource.setListData(availableResources);
         });
         addPanel.add(addButton);
 
@@ -258,9 +277,15 @@ public class ManageLibrary extends JDialog {
         removeButton.setIcon(new ImageIcon(path + "/Resources/Icons/rightArrow.png"));
         removeButton.setEnabled(false);
         removeButton.addActionListener(event -> {
-            JOptionPane.showMessageDialog(this, "This feature is not set up", "Not Set Up", JOptionPane.ERROR_MESSAGE);
+            Materials m = (Materials) installedResource.getSelectedValue();
+            int answer = JOptionPane.showConfirmDialog(this, "Are you sure you want to remove " +
+                    m.getName(), "Are You Sure", JOptionPane.YES_NO_OPTION);
+            if (answer == 0) {
+                removeConcordance((Materials) installedResource.getSelectedValue());
+            }
             installedResource.clearSelection();
             updateMaterials();
+            buildAvailableResourceList();
             installedResource.setListData(installedResources);
             availableResource.setListData(availableResources);
         });
@@ -347,5 +372,208 @@ public class ManageLibrary extends JDialog {
         }
 
         application.getMaterials();
+    }
+
+    private void removeConcordance(Materials materials) {
+        // Create Dialog Box
+        JDialog dialog = new JDialog(this, "Removing " + materials.getName(), ModalityType.APPLICATION_MODAL);
+        dialog.setLayout(new BorderLayout());
+        dialog.setSize(new Dimension(400,130));
+        dialog.setLocationRelativeTo(this);
+
+        // Create Labels and Progress Bars
+        JPanel panel = new JPanel();
+        panel.setLayout(new BorderLayout());
+        JLabel label = new JLabel("...");
+        label.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 18));
+        label.setHorizontalAlignment(JLabel.LEFT);
+        JProgressBar progressBar = new JProgressBar();
+        progressBar.setAlignmentX(JProgressBar.CENTER_ALIGNMENT);
+        progressBar.setVisible(true);
+        progressBar.setStringPainted(true);
+        progressBar.setValue(0);
+        panel.add(label, BorderLayout.NORTH);
+        panel.add(progressBar, BorderLayout.CENTER);
+
+        JPanel overallPanel = new JPanel();
+        overallPanel.setLayout(new BorderLayout());
+        JLabel overallLabel = new JLabel("Overall Progress");
+        overallLabel.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 18));
+        overallLabel.setHorizontalAlignment(JLabel.LEFT);
+        JProgressBar overallProgress = new JProgressBar();
+        overallProgress.setAlignmentX(JProgressBar.CENTER_ALIGNMENT);
+        overallProgress.setVisible(true);
+        overallProgress.setStringPainted(true);
+        overallProgress.setValue(0);
+        overallPanel.add(overallLabel, BorderLayout.NORTH);
+        overallPanel.add(overallProgress, BorderLayout.CENTER);
+
+        JPanel layout = new JPanel();
+        layout.setLayout(new BorderLayout());
+        layout.setBorder(new EmptyBorder(10,10,10,10));
+        layout.add(panel, BorderLayout.NORTH);
+        layout.add(overallPanel, BorderLayout.CENTER);
+
+        dialog.add(layout, BorderLayout.CENTER);
+
+        SwingWorker<Void, Progress> worker = new SwingWorker<>() {
+            @Override
+            protected Void doInBackground() throws Exception {
+                DatabaseConnection databaseConnection = new DatabaseConnection();
+                for (int i = 0; i < createLetters().size(); i++) {
+                    Vector<Word> words;
+                    words = databaseConnection.getWordByString(createLetters().get(i), materials.getMaterialsId());
+
+                    for (int j = 0; j < words.size(); j++) {
+                        Word word = words.get(j);
+                        Vector<Reference> references = databaseConnection.getReferenceByWordId(word.getWordId());
+                        publish(new Progress(word.getWord(), i, j, createLetters().size(), words.size()));
+
+                        for (int k = 0; k < references.size(); k++) {
+                            Reference reference = references.get(k);
+                            databaseConnection.deleteReference(reference.getReferenceId());
+                        }
+                        databaseConnection.deleteWord(word.getWordId());
+                    }
+                }
+                databaseConnection.deleteMaterials(materials.getMaterialsId());
+                databaseConnection.close();
+                return null;
+            }
+
+            @Override
+            protected void process(List<Progress> chunks) {
+                Progress chunk = chunks.get(chunks.size() - 1);
+                overallProgress.setMaximum(chunk.getMaxFile());
+                progressBar.setMaximum(chunk.getMaxWord());
+                label.setText(chunk.getLabel());
+                overallProgress.setValue(chunk.getOverallProgress());
+                progressBar.setValue(chunk.getInnerProgress());
+            }
+
+            @Override
+            protected void done() {
+                application.removeConcordancePane();
+                dialog.setVisible(false);
+            }
+        };
+
+        try {
+            worker.execute();
+            dialog.setVisible(true);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void removeBible(Bible bible) {
+        // Setup Dialog Box
+        JDialog dialog = new JDialog(this, "Removing " + bible.getBibleName() , ModalityType.APPLICATION_MODAL);
+        dialog.setLayout(new BorderLayout());
+        dialog.setSize(new Dimension(400,130));
+        dialog.setLocationRelativeTo(this);
+
+        // Create Label and Progress Bar
+        JPanel panel = new JPanel();
+        panel.setLayout(new BorderLayout());
+        JLabel label = new JLabel("...");
+        label.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 18));
+        label.setHorizontalAlignment(JLabel.LEFT);
+        JProgressBar progressBar = new JProgressBar();
+        progressBar.setAlignmentX(JProgressBar.CENTER_ALIGNMENT);
+        progressBar.setVisible(true);
+        progressBar.setStringPainted(true);
+        progressBar.setValue(0);
+        panel.add(label, BorderLayout.NORTH);
+        panel.add(progressBar, BorderLayout.CENTER);
+
+        JPanel overallPanel = new JPanel();
+        overallPanel.setLayout(new BorderLayout());
+        JLabel overallLabel = new JLabel("Overall Progress");
+        overallLabel.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 18));
+        overallLabel.setHorizontalAlignment(JLabel.LEFT);
+        JProgressBar overallProgress = new JProgressBar();
+        overallProgress.setAlignmentX(JProgressBar.CENTER_ALIGNMENT);
+        overallProgress.setVisible(true);
+        overallProgress.setStringPainted(true);
+        overallProgress.setValue(0);
+        overallPanel.add(overallLabel, BorderLayout.NORTH);
+        overallPanel.add(overallProgress, BorderLayout.CENTER);
+
+        JPanel layout = new JPanel();
+        layout.setLayout(new BorderLayout());
+        layout.setBorder(new EmptyBorder(10,10,10,10));
+        layout.add(panel, BorderLayout.NORTH);
+        layout.add(overallPanel, BorderLayout.CENTER);
+
+        dialog.add(layout, BorderLayout.CENTER);
+
+        SwingWorker<Void, Progress> worker = new SwingWorker<>() {
+            @Override
+            protected Void doInBackground() throws Exception {
+                DatabaseConnection databaseConnection = new DatabaseConnection();
+                Vector<Book> books = databaseConnection.getBooks();
+                for (int i = 0; i < books.size(); i++) {
+                    Book book = books.get(i);
+                    Vector<Chapter> chapters = databaseConnection.getChapters(bible.getBibleId(), book.getBookNumber());
+                    for (int j = 0; j < chapters.size(); j++) {
+                        Chapter chapter = chapters.get(j);
+                        Vector<BibleLink> bibleLinks = databaseConnection.getBibleLink(bible.getBibleId(), book.getBookNumber(), chapter.getChapterId());
+                        publish(new Progress(book.getBookTitle(), i, j, books.size(), chapters.size()));
+                        for (int k = 0; k < bibleLinks.size(); k++) {
+                            Vector<Notes> notes = databaseConnection.getNotes(bible.getBibleId(), book.getBookNumber(), chapter.getChapterId());
+                            for (Notes note : notes) {
+                                databaseConnection.deleteNotes(note.getNoteId());
+                            }
+                            BibleLink bibleLink = bibleLinks.get(k);
+                            databaseConnection.deleteVerse(bibleLink.getVerse().getVerseId());
+                            try {
+                                databaseConnection.deleteBibleLink(bibleLink.getBibleLinkId());
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            }
+                        }
+                    }
+                }
+                databaseConnection.deleteBible(bible.getBibleId());
+                databaseConnection.close();
+                return null;
+            }
+
+            @Override
+            protected void process(List<Progress> chunks) {
+                Progress chunk = chunks.get(chunks.size() - 1);
+                overallProgress.setMaximum(chunk.getMaxFile());
+                progressBar.setMaximum(chunk.getMaxWord());
+                label.setText(chunk.getLabel());
+                progressBar.setValue(chunk.getInnerProgress());
+                overallProgress.setValue(chunk.getOverallProgress());
+            }
+
+            @Override
+            protected void done() {
+                application.removeReaderPanelTab(bible.getBibleId());
+                dialog.setVisible(false);
+            }
+        };
+        try {
+            worker.execute();
+            dialog.setVisible(true);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private ArrayList<String> createLetters() {
+        ArrayList<String> letters = new ArrayList<>();
+        letters.add("A"); letters.add("B"); letters.add("C"); letters.add("D");
+        letters.add("E"); letters.add("F"); letters.add("G"); letters.add("H");
+        letters.add("I"); letters.add("J"); letters.add("K"); letters.add("L");
+        letters.add("M"); letters.add("N"); letters.add("O"); letters.add("P");
+        letters.add("Q"); letters.add("R"); letters.add("S"); letters.add("T");
+        letters.add("U"); letters.add("V"); letters.add("W");
+        letters.add("Y"); letters.add("Z");
+
+        return letters;
     }
 }
